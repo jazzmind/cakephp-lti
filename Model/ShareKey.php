@@ -1,7 +1,7 @@
 <?php
-App::uses('LTIAppModel', 'LTI.Model');
+App::uses('LtiAppModel', 'Lti.Model');
 
-class ShareKey extends LTIAppModel {
+class ShareKey extends LtiAppModel {
 
 	public $actsAs = ['Containable'];
 

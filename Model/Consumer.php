@@ -1,7 +1,8 @@
 <?php
-App::uses('LTIAppModel', 'LTI.Model');
+App::uses('LtiAppModel', 'Lti.Model');
+App::uses('Provider', 'Lti.Model');
 
-class Consumer extends LTIAppModel {
+class Consumer extends LtiAppModel {
 
 	public $actsAs = ['Containable'];
 
@@ -87,16 +88,16 @@ class Consumer extends LTIAppModel {
  * @param mixed   $data_connector  String containing table name prefix, or database connection object, or array containing one or both values (optional, default is MySQL with an empty table name prefix)
  * @param boolean $autoEnable      true if the tool consumers is to be enabled automatically (optional, default is false)
  */
-	public function __construct($key = NULL, $data_connector = '', $autoEnable = FALSE) {
+// 	public function __construct($key = NULL, $data_connector = '', $autoEnable = FALSE) {
 
-		$this->data_connector = LTI_Data_Connector::getDataConnector($data_connector);
-		if (!empty($key)) {
-			$this->load($key, $autoEnable);
-		} else {
-			$this->secret = LTI_Data_Connector::getRandomString(32);
-		}
+// ///		$this->data_connector = LTI_Data_Connector::getDataConnector($data_connector);
+// 		if (!empty($key)) {
+// 			$this->load($key, $autoEnable);
+// 		} else {
+// //			$this->secret = LTI_Data_Connector::getRandomString(32);
+// 		}
 
-	}
+// 	}
 
 /**
  * Initialise the tool consumer.
@@ -116,7 +117,7 @@ class Consumer extends LTIAppModel {
 		$this->enable_from = NULL;
 		$this->enable_until = NULL;
 		$this->last_access = NULL;
-		$this->id_scope = LTI_Tool_Provider::ID_SCOPE_ID_ONLY;
+		$this->id_scope = Provider::ID_SCOPE_ID_ONLY;
 		$this->defaultEmail = '';
 		$this->created = NULL;
 		$this->modified = NULL;

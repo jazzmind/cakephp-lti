@@ -1,7 +1,7 @@
 <?php
-App::uses('LTIAppModel', 'LTI.Model');
+App::uses('LtiAppModel', 'Lti.Model');
 
-class ResourceLink extends LTIAppModel {
+class ResourceLink extends LtiAppModel {
 
 	public $actsAs = ['Containable'];
 

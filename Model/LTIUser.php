@@ -1,7 +1,7 @@
 <?php
-App::uses('LTIAppModel', 'LTI.Model');
+App::uses('LtiAppModel', 'Lti.Model');
 
-class LTIUser extends LTIAppModel {
+class LtiUser extends LtiAppModel {
 
 	public $actsAs = ['Containable'];
 

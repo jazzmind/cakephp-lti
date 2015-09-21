@@ -1,7 +1,7 @@
 <?php
-App::uses('LTIAppController', 'LTI.Controller');
+App::uses('LtiAppController', 'Lti.Controller');
 
-class ProvidersController extends LTIAppController {
+class ProvidersController extends LtiAppController {
 	public $components = [];
 
 /**

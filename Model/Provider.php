@@ -1,9 +1,10 @@
 <?php
-App::uses('LTIAppModel', 'LTI.Model');
+App::uses('LtiAppModel', 'Lti.Model');
 
-class Provider extends LTIAppModel {
+class Provider extends LtiAppModel {
 
 	public $actsAs = ['Containable'];
+	public $table = false;
 
 /**
  * Default connection error message.

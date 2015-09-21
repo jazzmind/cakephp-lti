@@ -1,6 +1,6 @@
 <?php
 App::uses('AppController', 'Controller');
 
-class LTIAppController extends AppController {
+class LtiAppController extends AppController {
 	public $components = [];
 }

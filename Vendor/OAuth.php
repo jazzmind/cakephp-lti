@@ -558,7 +558,7 @@ class OAuthServer {
    * verify an api call, checks all the parameters
    */
   public function verify_request(&$request) {
-    $this->get_version($request);
+    $version = $this->get_version($request);
     $consumer = $this->get_consumer($request);
     $token = $this->get_token($request, $consumer, "access");
     $this->check_signature($request, $consumer, $token);
@@ -663,6 +663,7 @@ class OAuthServer {
     $signature_method = $this->get_signature_method($request);
 
     $signature = $request->get_parameter('oauth_signature');
+
     $valid_sig = $signature_method->check_signature(
       $request,
       $consumer,

@@ -106,40 +106,40 @@ class Provider extends LtiAppModel {
 /**
  *  @var string URL to redirect user to on successful completion of the request.
  */
-	protected $redirectURL = NULL;
+	public $redirectURL = NULL;
 /**
  *  @var string URL to redirect user to on successful completion of the request.
  */
-	protected $mediaTypes = NULL;
+	public $mediaTypes = NULL;
 /**
  *  @var string URL to redirect user to on successful completion of the request.
  */
-	protected $documentTargets = NULL;
+	public $documentTargets = NULL;
 /**
  *  @var string HTML to be displayed on a successful completion of the request.
  */
-	protected $output = NULL;
+	public $output = NULL;
 /**
  *  @var string HTML to be displayed on an unsuccessful completion of the request and no return URL is available.
  */
-	protected $error_output = NULL;
+	public $error_output = NULL;
 /**
  *  @var boolean Whether debug messages explaining the cause of errors are to be returned to the tool consumer.
  */
-	protected $debugMode = FALSE;
+	public $debugMode = FALSE;
 
 /**
  *  @var array Callback functions for handling requests.
  */
-	private $callbackHandler = NULL;
+	public $callbackHandler = NULL;
 /**
  *  @var array LTI parameter constraints for auto validation checks.
  */
-	private $constraints = NULL;
+	public $constraints = NULL;
 /**
  *  @var array List of supported message types and associated callback type names
  */
-	private $messageTypes = [
+	public $messageTypes = [
 		'basic-lti-launch-request' => 'launch',
 		'ConfigureLaunchRequest' => 'configure',
 		'DashboardRequest' => 'dashboard',
@@ -148,7 +148,7 @@ class Provider extends LtiAppModel {
 /**
  *  @var array List of supported message types and associated class methods
  */
-	private $methodNames = [
+	public $methodNames = [
 		'basic-lti-launch-request' => 'onLaunch',
 		'ConfigureLaunchRequest' => 'onConfigure',
 		'DashboardRequest' => 'onDashboard',
@@ -157,7 +157,7 @@ class Provider extends LtiAppModel {
 /**
  *  @var array Names of LTI parameters to be retained in the settings property.
  */
-	private $lti_settings_names = [
+	public $lti_settings_names = [
 		'ext_resource_link_content', 'ext_resource_link_content_signature',
 		'lis_result_sourcedid', 'lis_outcome_service_url',
 		'ext_ims_lis_basic_outcome_url', 'ext_ims_lis_resultvalue_sourcedids',
@@ -168,7 +168,7 @@ class Provider extends LtiAppModel {
 /**
  * @var array Permitted LTI versions for messages.
  */
-	private $LTI_VERSIONS = array(self::LTI_VERSION1, self::LTI_VERSION2);
+	public $LTI_VERSIONS = array(self::LTI_VERSION1, self::LTI_VERSION2);
 
 /**
  * Add a parameter constraint to be checked on launch

@@ -4,7 +4,7 @@ App::import('Vendor', 'Lti.OAuth', ['file' => 'OAuth.php']);
 
 class ConsumersController extends LtiAppController {
 	public $components = [];
-
+	public $scaffold = 'admin';
 /**
  * Security
  *
@@ -15,14 +15,14 @@ class ConsumersController extends LtiAppController {
  			'launch', 'response'
   		],
  		'admin' => [
- 			'admin_index'/*, 'admin_add', 'admin_edit', 'admin_delete', 'admin_award', 'admin_conditions', 'admin_condition_remove' */
+ 			'admin_index', 'admin_add', 'admin_edit', 'admin_delete',
  		],
  		'ajax-only' => [
  		]
 	];
 
 	public function beforeFilter() {
-		$this->Security->unlockedActions = ['admin_index', 'launch', 'response'];
+		$this->Security->unlockedActions = ['admin_index', 'admin_add', 'admin_delete', 'admin_edit', 'launch', 'response'];
 		parent::beforeFilter();
 	}
 
@@ -31,8 +31,6 @@ class ConsumersController extends LtiAppController {
 		return parent::isAuthorized($user);
 	}
 
-	public function admin_index() {
-	}
 
 	public function launch() {
 		$launch_url = Router::url(['plugin' => 'lti', 'admin'=>false, 'controller' => 'providers', 'action' => 'request'], true);

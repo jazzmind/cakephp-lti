@@ -4,7 +4,15 @@ App::uses('LtiAppModel', 'Lti.Model');
 class ResourceLink extends LtiAppModel {
 
 	public $actsAs = ['Containable'];
+	public $useTable = 'contexts';
 
+	public $belongsTo = [
+		'Consumer' => [
+			'className' => 'Lti.Consumer',
+			'dependent' => true,
+			'foreignKey' => 'consumer_key'
+		],
+	];
 ###
 ###  LTI_Resource_Link methods
 ###
@@ -12,124 +20,124 @@ class ResourceLink extends LtiAppModel {
 ###
 #    Load the resource link from the database
 ###
-	public function Resource_Link_load($resource_link) {
+	// public function Resource_Link_load($resource_link) {
 
-		$key = $resource_link->getKey();
-		$id = $resource_link->getId();
-		$sql = 'SELECT consumer_key, context_id, lti_context_id, lti_resource_id, title, settings, ' .
-					 'primary_consumer_key, primary_context_id, share_approved, created, modified ' .
-					 'FROM ' .$this->dbTableNamePrefix . LTI_Data_Connector::RESOURCE_LINK_TABLE_NAME . ' ' .
-					 'WHERE (consumer_key = :key) AND (context_id = :id)';
-		$query = $this->db->prepare($sql);
-		$query->bindValue('key', $key, PDO::PARAM_STR);
-		$query->bindValue('id', $id, PDO::PARAM_STR);
-		$ok = $query->execute();
-		if ($ok) {
-			$row = $query->fetch(PDO::FETCH_ASSOC);
-			$ok = ($row !== FALSE);
-		}
+	// 	$key = $resource_link->getKey();
+	// 	$id = $resource_link->getId();
+	// 	$sql = 'SELECT consumer_key, context_id, lti_context_id, lti_resource_id, title, settings, ' .
+	// 				 'primary_consumer_key, primary_context_id, share_approved, created, modified ' .
+	// 				 'FROM ' .$this->dbTableNamePrefix . LTI_Data_Connector::RESOURCE_LINK_TABLE_NAME . ' ' .
+	// 				 'WHERE (consumer_key = :key) AND (context_id = :id)';
+	// 	$query = $this->db->prepare($sql);
+	// 	$query->bindValue('key', $key, PDO::PARAM_STR);
+	// 	$query->bindValue('id', $id, PDO::PARAM_STR);
+	// 	$ok = $query->execute();
+	// 	if ($ok) {
+	// 		$row = $query->fetch(PDO::FETCH_ASSOC);
+	// 		$ok = ($row !== FALSE);
+	// 	}
 
-		if ($ok) {
-			$row = array_change_key_case($row);
-			$resource_link->lti_context_id = $row['lti_context_id'];
-			$resource_link->lti_resource_link_id = $row['lti_resource_id'];
-			$resource_link->title = $row['title'];
-			if (is_string($row['settings'])) {
-				$resource_link->settings = json_decode($row['settings'], TRUE);
-				if (!is_array($resource_link->settings)) {
-					$resource_link->settings = unserialize($row['settings']);  // check for old serialized setting
-				}
-				if (!is_array($resource_link->settings)) {
-					$resource_link->settings = array();
-				}
-			} else {
-				$resource_link->settings = array();
-			}
-			$resource_link->primary_consumer_key = $row['primary_consumer_key'];
-			$resource_link->primary_resource_link_id = $row['primary_context_id'];
-			$resource_link->share_approved = (is_null($row['share_approved'])) ? NULL : ($row['share_approved'] == 1);
-			$resource_link->created = strtotime($row['created']);
-			$resource_link->modified = strtotime($row['modified']);
-		}
+	// 	if ($ok) {
+	// 		$row = array_change_key_case($row);
+	// 		$resource_link->lti_context_id = $row['lti_context_id'];
+	// 		$resource_link->lti_resource_link_id = $row['lti_resource_id'];
+	// 		$resource_link->title = $row['title'];
+	// 		if (is_string($row['settings'])) {
+	// 			$resource_link->settings = json_decode($row['settings'], TRUE);
+	// 			if (!is_array($resource_link->settings)) {
+	// 				$resource_link->settings = unserialize($row['settings']);  // check for old serialized setting
+	// 			}
+	// 			if (!is_array($resource_link->settings)) {
+	// 				$resource_link->settings = array();
+	// 			}
+	// 		} else {
+	// 			$resource_link->settings = array();
+	// 		}
+	// 		$resource_link->primary_consumer_key = $row['primary_consumer_key'];
+	// 		$resource_link->primary_resource_link_id = $row['primary_context_id'];
+	// 		$resource_link->share_approved = (is_null($row['share_approved'])) ? NULL : ($row['share_approved'] == 1);
+	// 		$resource_link->created = strtotime($row['created']);
+	// 		$resource_link->modified = strtotime($row['modified']);
+	// 	}
 
-		return $ok;
+	// 	return $ok;
 
-	}
+	// }
 
 ###
 #    Save the resource link to the database
 ###
-	public function Resource_Link_save($resource_link) {
+//	public function Resource_Link_save($resource_link) {
 
-		$time = time();
-		$now = date("{$this->date_format} {$this->time_format}", $time);
-		$settingsValue = json_encode($resource_link->settings);
-		$key = $resource_link->getKey();
-		$id = $resource_link->getId();
-		$previous_id = $resource_link->getId(TRUE);
-		if (is_null($resource_link->created)) {
-			$sql = 'INSERT INTO ' . $this->dbTableNamePrefix . LTI_Data_Connector::RESOURCE_LINK_TABLE_NAME . ' ' .
-						 '(consumer_key, context_id, lti_context_id, lti_resource_id, title, settings, ' .
-						 'primary_consumer_key, primary_context_id, share_approved, created, modified) ' .
-						 'VALUES (:key, :id, :lti_context_id, :lti_resource_id, :title, :settings, ' .
-						 ':primary_consumer_key, :primary_context_id, :share_approved, :created, :modified)';
-			$query = $this->db->prepare($sql);
-			$query->bindValue('key', $key, PDO::PARAM_STR);
-			$query->bindValue('id', $id, PDO::PARAM_STR);
-			$query->bindValue('lti_context_id', $resource_link->lti_context_id, PDO::PARAM_STR);
-			$query->bindValue('lti_resource_id', $resource_link->lti_resource_id, PDO::PARAM_STR);
-			$query->bindValue('title', $resource_link->title, PDO::PARAM_STR);
-			$query->bindValue('settings', $settingsValue, PDO::PARAM_STR);
-			$query->bindValue('primary_consumer_key', $resource_link->primary_consumer_key, PDO::PARAM_STR);
-			$query->bindValue('primary_context_id', $resource_link->primary_resource_link_id, PDO::PARAM_STR);
-			$query->bindValue('share_approved', $resource_link->share_approved, PDO::PARAM_INT);
-			$query->bindValue('created', $now, PDO::PARAM_STR);
-			$query->bindValue('modified', $now, PDO::PARAM_STR);
-		} else if ($id == $previous_id) {
-			$sql = 'UPDATE ' . $this->dbTableNamePrefix . LTI_Data_Connector::RESOURCE_LINK_TABLE_NAME . ' ' .
-						 'SET lti_context_id = :lti_context_id, lti_resource_id = :lti_resource_id, title = :title, settings = :settings, ' .
-						 'primary_consumer_key = :primary_consumer_key, primary_context_id = :primary_context_id, share_approved = :share_approved, modified = :modified ' .
-						 'WHERE (consumer_key = :key) AND (context_id = :id)';
-			$query = $this->db->prepare($sql);
-			$query->bindValue('key', $key, PDO::PARAM_STR);
-			$query->bindValue('id', $id, PDO::PARAM_STR);
-			$query->bindValue('lti_context_id', $resource_link->lti_context_id, PDO::PARAM_STR);
-			$query->bindValue('lti_resource_id', $resource_link->lti_resource_id, PDO::PARAM_STR);
-			$query->bindValue('title', $resource_link->title, PDO::PARAM_STR);
-			$query->bindValue('settings', $settingsValue, PDO::PARAM_STR);
-			$query->bindValue('primary_consumer_key', $resource_link->primary_consumer_key, PDO::PARAM_STR);
-			$query->bindValue('primary_context_id', $resource_link->primary_resource_link_id, PDO::PARAM_STR);
-			$query->bindValue('share_approved', $resource_link->share_approved, PDO::PARAM_INT);
-			$query->bindValue('modified', $now, PDO::PARAM_STR);
-		} else {
-			$sql = 'UPDATE ' . $this->dbTableNamePrefix . LTI_Data_Connector::RESOURCE_LINK_TABLE_NAME . ' ' .
-						 'SET context_id = :new_id, lti_context_id = :lti_context_id, lti_resource_id = :lti_resource_id, title = :title, settings = :settings, ' .
-						 'primary_consumer_key = :primary_consumer_key, primary_context_id = :primary_context_id, share_approved = :share_approved, modified = :modified ' .
-						 'WHERE (consumer_key = :key) AND (context_id = :old_id)';
-			$query = $this->db->prepare($sql);
-			$query->bindValue('key', $key, PDO::PARAM_STR);
-			$query->bindValue('old_id', $previous_id, PDO::PARAM_STR);
-			$query->bindValue('new_id', $id, PDO::PARAM_STR);
-			$query->bindValue('lti_context_id', $resource_link->lti_context_id, PDO::PARAM_STR);
-			$query->bindValue('lti_resource_id', $resource_link->lti_resource_id, PDO::PARAM_STR);
-			$query->bindValue('title', $resource_link->title, PDO::PARAM_STR);
-			$query->bindValue('settings', $settingsValue, PDO::PARAM_STR);
-			$query->bindValue('primary_consumer_key', $resource_link->primary_consumer_key, PDO::PARAM_STR);
-			$query->bindValue('primary_context_id', $resource_link->primary_resource_link_id, PDO::PARAM_STR);
-			$query->bindValue('share_approved', $resource_link->share_approved, PDO::PARAM_INT);
-			$query->bindValue('modified', $now, PDO::PARAM_STR);
-		}
-		$ok = $query->execute();
-		if ($ok) {
-			if (is_null($resource_link->created)) {
-				$resource_link->created = $time;
-			}
-			$resource_link->modified = $time;
-		}
+		// $time = time();
+		// $now = date("{$this->date_format} {$this->time_format}", $time);
+		// $settingsValue = json_encode($resource_link->settings);
+		// $key = $resource_link->getKey();
+		// $id = $resource_link->getId();
+		// $previous_id = $resource_link->getId(TRUE);
+		// if (is_null($resource_link->created)) {
+		// 	$sql = 'INSERT INTO ' . $this->dbTableNamePrefix . LTI_Data_Connector::RESOURCE_LINK_TABLE_NAME . ' ' .
+		// 				 '(consumer_key, context_id, lti_context_id, lti_resource_id, title, settings, ' .
+		// 				 'primary_consumer_key, primary_context_id, share_approved, created, modified) ' .
+		// 				 'VALUES (:key, :id, :lti_context_id, :lti_resource_id, :title, :settings, ' .
+		// 				 ':primary_consumer_key, :primary_context_id, :share_approved, :created, :modified)';
+		// 	$query = $this->db->prepare($sql);
+		// 	$query->bindValue('key', $key, PDO::PARAM_STR);
+		// 	$query->bindValue('id', $id, PDO::PARAM_STR);
+		// 	$query->bindValue('lti_context_id', $resource_link->lti_context_id, PDO::PARAM_STR);
+		// 	$query->bindValue('lti_resource_id', $resource_link->lti_resource_id, PDO::PARAM_STR);
+		// 	$query->bindValue('title', $resource_link->title, PDO::PARAM_STR);
+		// 	$query->bindValue('settings', $settingsValue, PDO::PARAM_STR);
+		// 	$query->bindValue('primary_consumer_key', $resource_link->primary_consumer_key, PDO::PARAM_STR);
+		// 	$query->bindValue('primary_context_id', $resource_link->primary_resource_link_id, PDO::PARAM_STR);
+		// 	$query->bindValue('share_approved', $resource_link->share_approved, PDO::PARAM_INT);
+		// 	$query->bindValue('created', $now, PDO::PARAM_STR);
+		// 	$query->bindValue('modified', $now, PDO::PARAM_STR);
+		// } else if ($id == $previous_id) {
+		// 	$sql = 'UPDATE ' . $this->dbTableNamePrefix . LTI_Data_Connector::RESOURCE_LINK_TABLE_NAME . ' ' .
+		// 				 'SET lti_context_id = :lti_context_id, lti_resource_id = :lti_resource_id, title = :title, settings = :settings, ' .
+		// 				 'primary_consumer_key = :primary_consumer_key, primary_context_id = :primary_context_id, share_approved = :share_approved, modified = :modified ' .
+		// 				 'WHERE (consumer_key = :key) AND (context_id = :id)';
+		// 	$query = $this->db->prepare($sql);
+		// 	$query->bindValue('key', $key, PDO::PARAM_STR);
+		// 	$query->bindValue('id', $id, PDO::PARAM_STR);
+		// 	$query->bindValue('lti_context_id', $resource_link->lti_context_id, PDO::PARAM_STR);
+		// 	$query->bindValue('lti_resource_id', $resource_link->lti_resource_id, PDO::PARAM_STR);
+		// 	$query->bindValue('title', $resource_link->title, PDO::PARAM_STR);
+		// 	$query->bindValue('settings', $settingsValue, PDO::PARAM_STR);
+		// 	$query->bindValue('primary_consumer_key', $resource_link->primary_consumer_key, PDO::PARAM_STR);
+		// 	$query->bindValue('primary_context_id', $resource_link->primary_resource_link_id, PDO::PARAM_STR);
+		// 	$query->bindValue('share_approved', $resource_link->share_approved, PDO::PARAM_INT);
+		// 	$query->bindValue('modified', $now, PDO::PARAM_STR);
+		// } else {
+		// 	$sql = 'UPDATE ' . $this->dbTableNamePrefix . LTI_Data_Connector::RESOURCE_LINK_TABLE_NAME . ' ' .
+		// 				 'SET context_id = :new_id, lti_context_id = :lti_context_id, lti_resource_id = :lti_resource_id, title = :title, settings = :settings, ' .
+		// 				 'primary_consumer_key = :primary_consumer_key, primary_context_id = :primary_context_id, share_approved = :share_approved, modified = :modified ' .
+		// 				 'WHERE (consumer_key = :key) AND (context_id = :old_id)';
+		// 	$query = $this->db->prepare($sql);
+		// 	$query->bindValue('key', $key, PDO::PARAM_STR);
+		// 	$query->bindValue('old_id', $previous_id, PDO::PARAM_STR);
+		// 	$query->bindValue('new_id', $id, PDO::PARAM_STR);
+		// 	$query->bindValue('lti_context_id', $resource_link->lti_context_id, PDO::PARAM_STR);
+		// 	$query->bindValue('lti_resource_id', $resource_link->lti_resource_id, PDO::PARAM_STR);
+		// 	$query->bindValue('title', $resource_link->title, PDO::PARAM_STR);
+		// 	$query->bindValue('settings', $settingsValue, PDO::PARAM_STR);
+		// 	$query->bindValue('primary_consumer_key', $resource_link->primary_consumer_key, PDO::PARAM_STR);
+		// 	$query->bindValue('primary_context_id', $resource_link->primary_resource_link_id, PDO::PARAM_STR);
+		// 	$query->bindValue('share_approved', $resource_link->share_approved, PDO::PARAM_INT);
+		// 	$query->bindValue('modified', $now, PDO::PARAM_STR);
+		// }
+		// $ok = $query->execute();
+		// if ($ok) {
+		// 	if (is_null($resource_link->created)) {
+		// 		$resource_link->created = $time;
+		// 	}
+		// 	$resource_link->modified = $time;
+		// }
 
-		return $ok;
+		// return $ok;
 
-	}
+//	}
 
 ###
 #    Delete the resource link from the database

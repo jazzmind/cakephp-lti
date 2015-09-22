@@ -3,7 +3,7 @@ App::uses('LtiAppController', 'Lti.Controller');
 
 class ProvidersController extends LtiAppController {
 	public $components = [];
-
+	public $scaffold = 'admin';
 /**
  * Security
  *
@@ -11,16 +11,17 @@ class ProvidersController extends LtiAppController {
  */
  	public $actions = [
  		'all' => [
+ 			'request'
   		],
  		'admin' => [
- 			'admin_index'/*, 'admin_add', 'admin_edit', 'admin_delete', 'admin_award', 'admin_conditions', 'admin_condition_remove' */
+ 			'admin_index', 'admin_add', 'admin_edit', 'admin_delete',
  		],
  		'ajax-only' => [
  		]
 	];
 
 	public function beforeFilter() {
-		$this->Security->unlockedActions = ['admin_index'];
+		$this->Security->unlockedActions = ['admin_index', 'admin_add', 'admin_edit', 'admin_delete', 'request'];
 		parent::beforeFilter();
 	}
 
@@ -29,57 +30,25 @@ class ProvidersController extends LtiAppController {
 		return parent::isAuthorized($user);
 	}
 
-	public function admin_index() {
-	}
-
-
 	public function request() {
-
+		$this->layout = 'basic';
 		#
 		### Perform action
 		#
 		$this->_init();
 
-		if ($this->Provider->isOK) {
-			if ($this->_authenticate()) {
-				$this->_doCallback();
-			}
+		$this->_validate();
+
+		if ($this->_authenticate()) {
+			$this->_doCallback();
 		}
 		$this->_result();
 
 	}
 
-	protected function _init() {
-
-		$callbackHandler = $this->request->data['callbackHandler'];
-		$this->callbackHandler = array();
-		if (is_array($callbackHandler)) {
-			$this->callbackHandler = $callbackHandler;
-			if (isset($this->callbackHandler['connect']) && !isset($this->callbackHandler['launch'])) {  // for backward compatibility
-				$this->callbackHandler['launch'] = $this->callbackHandler['connect'];
-				unset($this->callbackHandler['connect']);
-			}
-		} else if (!empty($callbackHandler)) {
-			$this->callbackHandler['launch'] = $callbackHandler;
-		}
-		#
-		### Set debug mode
-		#
-		$this->debugMode = isset($this->request->data['custom_debug']) && (strtolower($this->request->data['custom_debug']) == 'true');
-		### Set return URL if available
-		#
-		if (isset($this->request->data['launch_presentation_return_url'])) {
-			$this->return_url = $this->request->data['launch_presentation_return_url'];
-		} else if (isset($this->request->data['content_item_return_url'])) {
-			$this->return_url = $this->request->data['content_item_return_url'];
-		}
-
-	}
-
-
 
 	###
-	###  PROTECTED METHODS
+	###  HANDLER METHODS
 	###
 
 	/**
@@ -87,7 +56,7 @@ class ProvidersController extends LtiAppController {
 	 *
 	 * @return boolean True if no error
 	 */
-		protected function onLaunch() {
+		protected function _onLaunch() {
 
 			$this->_doCallbackMethod();
 
@@ -98,7 +67,7 @@ class ProvidersController extends LtiAppController {
 	 *
 	 * @return boolean True if no error
 	 */
-		protected function onConfigure() {
+		protected function _onConfigure() {
 
 			$this->_doCallbackMethod();
 
@@ -109,7 +78,7 @@ class ProvidersController extends LtiAppController {
 	 *
 	 * @return boolean True if no error
 	 */
-		protected function onDashboard() {
+		protected function _onDashboard() {
 
 			$this->_doCallbackMethod();
 
@@ -120,7 +89,7 @@ class ProvidersController extends LtiAppController {
 	 *
 	 * @return boolean True if no error
 	 */
-		protected function onContentItem() {
+		protected function _onContentItem() {
 
 			$this->_doCallbackMethod();
 
@@ -131,15 +100,410 @@ class ProvidersController extends LtiAppController {
 	 *
 	 * @return boolean True if no further error processing required
 	 */
-		protected function onError() {
+		protected function _onError() {
 
 			$this->_doCallbackMethod('error');
 
 		}
 
 ###
-###  PRIVATE METHODS
+###  INTERNAL METHODS
 ###
+
+	protected function _init() {
+		$this->Provider->callbackHandler = array();
+		if (!empty($this->request->data['callbackHandler'])) {
+			$callbackHandler = $this->request->data['callbackHandler'];
+			if (is_array($callbackHandler)) {
+				if (!empty($callbackHandler['connect']) and empty($callbackHandler['launch'])) {  // for backward compatibility
+					$callbackHandler['launch'] = $callbackHandler['connect'];
+					unset($callbackHandler['connect']);
+				}
+				$this->Provider->callbackHandler = $callbackHandler;
+			} else if (!empty($callbackHandler)) {
+				$this->Provider->callbackHandler['launch'] = $callbackHandler;
+			}
+		}
+		#
+		### Set debug mode
+		#
+		if (!empty($this->request->data['custom_debug'])) {
+			$this->Provider->debugMode = true;
+		}
+
+		### Set return URL if available
+		#
+		if (isset($this->request->data['launch_presentation_return_url'])) {
+			$this->Provider->return_url = $this->request->data['launch_presentation_return_url'];
+		} else if (isset($this->request->data['content_item_return_url'])) {
+			$this->Provider->return_url = $this->request->data['content_item_return_url'];
+		}
+
+
+	}
+
+	protected function _validate() {
+		$now = time();
+		$data = $this->request->data;
+		$this->Provider->isOK = false;
+
+		// Check consumer key
+
+		if (empty($data['oauth_consumer_key'])) {
+			return $this->Provider->reason = 'Missing consumer key.';
+		}
+
+		// Check all required launch parameters
+		if (empty($data['lti_message_type']) or !array_key_exists($data['lti_message_type'], $this->Provider->messageTypes)) {
+			return $this->Provider->reason = 'Invalid or missing lti_message_type parameter.';
+		}
+
+		if (empty($data['lti_version']) or !in_array($data['lti_version'], $this->Provider->LTI_VERSIONS)) {
+			return $this->Provider->reason = 'Invalid or missing lti_version parameter.';
+		}
+
+		switch ($data['lti_message_type']) {
+			case 'ContentItemSelectionRequest':
+				if (empty($data['content_item_return_url']) or !(strlen(trim($data['content_item_return_url'])) > 0)) {
+					return $this->Provider->reason = 'Missing content_item_return_url parameter.';
+				}
+
+				if (!empty($data['accept_media_types']) and (strlen(trim($data['accept_media_types'])) > 0)) {
+					$mediaTypes = array_filter(explode(',', str_replace(' ', '', $data['accept_media_types'])), 'strlen');
+					$mediaTypes = array_unique($mediaTypes);
+				}
+				if (empty($mediaTypes)) {
+					return $this->Provider->reason = 'No accept_media_types found.';
+				}
+				$this->Provider->mediaTypes = $mediaTypes;
+
+				if (!empty($data['accept_presentation_document_targets']) and (strlen(trim($data['accept_presentation_document_targets'])) > 0)) {
+					$documentTargets = array_filter(explode(',', str_replace(' ', '', $data['accept_presentation_document_targets'])), 'strlen');
+					$documentTargets = array_unique($documentTargets);
+				}
+				if (empty($documentTargets)) {
+					return $this->Provider->reason = 'Missing or empty accept_presentation_document_targets parameter.';
+				}
+
+				foreach ($documentTargets as $documentTarget) {
+					if (!in_array($documentTarget, ['embed', 'frame', 'iframe', 'window', 'popup', 'overlay', 'none'])) {
+						return $this->Provider->reason = 'Invalid value in accept_presentation_document_targets parameter: ' . $documentTarget;
+					}
+				}
+				$this->Provider->documentTargets = $documentTargets;
+
+				if (!empty($data['accept_unsigned']) and !in_array($data['accept_unsigned'], ['true', 'false'])) {
+					return $this->Provider->reason = 'Invalid value for accept_unsigned parameter: ' . $data['accept_unsigned'];
+				}
+				if (!empty($data['accept_multiple']) and !in_array($data['accept_multiple'], ['true', 'false'])) {
+					return $this->Provider->reason = 'Invalid value for accept_multiple parameter: ' . $data['accept_multiple'];
+				}
+				if (!empty($data['accept_copy_advice']) and !in_array($data['accept_copy_advice'], ['true', 'false'])) {
+					return $this->Provider->reason = 'Invalid value for accept_copy_advice parameter: ' . $data['accept_copy_advice'];
+				}
+				if (!empty($data['auto_create']) and !in_array($data['auto_create'], ['true', 'false'])) {
+					return $this->Provider->reason = 'Invalid value for auto_create parameter: ' . $data['auto_create'];
+				}
+				if (!empty($data['can_confirm']) and !in_array($data['can_confirm'], ['true', 'false'])) {
+					return $this->Provider->reason = 'Invalid value for can_confirm parameter: ' . $data['can_confirm'];
+				}
+
+				break;
+
+			case 'basic-lti-launch-request':
+			case 'DashboardRequest':
+				if (empty($data['resource_link_id']) or !(strlen(trim($data['resource_link_id'])) > 0)) {
+					return $this->Provider->reason = 'Missing resource link ID.';
+				}
+				// fall through
+			default:
+				if (!empty($data['launch_presentation_document_target']) and !in_array($data['launch_presentation_document_target'], ['embed', 'frame', 'iframe', 'window', 'popup', 'overlay'])) {
+					return $this->Provider->reason = 'Invalid value for launch_presentation_document_target parameter: ' . $data['launch_presentation_document_target'];
+				}
+				break;
+		}
+
+		#
+		### Get the consumer
+		#
+		$this->loadModel('Lti.Consumer');
+		$this->Consumer->findByConsumerKey($data['oauth_consumer_key']);
+		if (empty($this->Consumer->consumer_key)) {
+			return $this->Provider->reason = 'Invalid consumer key.';
+		}
+
+		if ($this->Consumer->protected) {
+			if (empty($data['tool_consumer_instance_guid'])) {
+				return $this->Provider->reason = 'A tool consumer GUID must be included in the launch request.';
+			}
+			if (empty($this->Consumer->consumer_guid) or !($this->Consumer->consumer_guid == $data['tool_consumer_instance_guid'])) {
+				return $this->Provider->reason = 'Request is from an invalid tool consumer.';
+			}
+		}
+
+		if (!$this->Consumer->enabled) {
+				return $this->Provider->reason = 'Tool consumer has not been enabled by the tool provider.';
+		}
+
+		if (!empty($this->Consumer->enable_from) and ($this->Consumer->enable_from > $now)) {
+			return $this->Provider->reason = 'Tool consumer access is not yet available.';
+		}
+
+		if (!empty($this->Consumer->enable_until) and ($this->Consumer->enable_until <= $now)) {
+			return $this->Provider->reason = 'Tool consumer access has expired.';
+		}
+
+
+		#
+		### Validate message parameter constraints
+		#
+		if (!empty($this->Provider->constraints)) {
+			$invalid_parameters = array();
+			foreach ($this->Provider->constraints as $name => $constraint) {
+				if (empty($constraint['messages']) || in_array($data['lti_message_type'], $constraint['messages'])) {
+					if ($constraint['required']) {
+						if (empty($data[$name]) or (strlen(trim($data[$name])) <= 0)) {
+							$invalid_parameters[] = "{$name} (missing)";
+							continue;
+						}
+					}
+					if (!empty($constraint['max_length'])) {
+						if (strlen(trim($data[$name])) > $constraint['max_length']) {
+							$invalid_parameters[] = "{$name} (too long)";
+						}
+					}
+				}
+			}
+
+			if (count($invalid_parameters) > 0) {
+				return $this->Provider->reason = 'Invalid parameter(s): ' . implode(', ', $invalid_parameters) . '.';
+			}
+		}
+
+		$this->Provider->isOK = true;
+	}
+/**
+ * Check the authenticity of the LTI launch request.
+ *
+ * The consumer, resource link and user objects will be initialised if the request is valid.
+ *
+ * @return boolean True if the request has been successfully validated.
+ */
+	protected function _authenticate() {
+		if (!$this->Provider->isOK) {
+			return false;
+		}
+
+		$doSaveConsumer = FALSE;
+
+		$now = time();
+		$today = date('Y-m-d', $now);
+		if (empty($this->Consumer->last_access)) {
+			$doSaveConsumer = TRUE;
+		} else {
+			$last = date('Y-m-d', $this->Consumer->last_access);
+			$doSaveConsumer = $doSaveConsumer || ($last != $today);
+		}
+		$this->Consumer->last_access = $now;
+		try {
+			$this->loadModel('Lti.OAuthStore');
+			$store = new OAuthStore($this->Provider, $this->Consumer);
+			$server = new OAuthServer($this->OAuthStore);
+			$method = new OAuthSignatureMethod_HMAC_SHA1();
+			$server->add_signature_method($method);
+			$request = OAuthRequest::from_request();
+			$res = $server->verify_request($request);
+		} catch (Exception $e) {
+			$this->Provider->isOK = FALSE;
+			if (empty($this->Provider->reason)) {
+				if ($this->Provider->debugMode) {
+					$oconsumer = new OAuthConsumer($this->Consumer->consumer_key, $this->Consumer->secret);
+					$signature = $request->build_signature($method, $oconsumer, FALSE);
+					$this->Provider->reason = $e->getMessage();
+					if (empty($this->Provider->reason)) {
+						$this->Provider->reason = 'OAuth exception';
+					}
+					$this->Provider->details[] = 'Timestamp: ' . time();
+					$this->Provider->details[] = "Signature: {$signature}";
+					$this->Provider->details[] = "Base string: {$request->base_string}]";
+				} else {
+					$this->Provider->reason = 'OAuth signature check failed - perhaps an incorrect secret or timestamp.';
+				}
+			}
+			return false;
+		}
+
+		### Set the request context/resource link
+		#
+		if (isset($data['resource_link_id'])) {
+			$content_item_id = '';
+			if (isset($_POST['custom_content_item_id'])) {
+				$content_item_id = $_POST['custom_content_item_id'];
+			}
+			$this->resource_link = new ResourceLink($this->consumer, trim($_POST['resource_link_id']), $content_item_id);
+			if (isset($_POST['context_id'])) {
+				$this->resource_link->lti_context_id = trim($_POST['context_id']);
+			}
+			$this->resource_link->lti_resource_id = trim($_POST['resource_link_id']);
+			$title = '';
+			if (isset($_POST['context_title'])) {
+				$title = trim($_POST['context_title']);
+			}
+			if (isset($_POST['resource_link_title']) && (strlen(trim($_POST['resource_link_title'])) > 0)) {
+				if (!empty($title)) {
+					$title .= ': ';
+				}
+				$title .= trim($_POST['resource_link_title']);
+			}
+			if (empty($title)) {
+				$title = "Course {$this->resource_link->getId()}";
+			}
+			$this->resource_link->title = $title;
+
+			// Save LTI parameters
+			foreach ($this->lti_settings_names as $name) {
+				if (isset($_POST[$name])) {
+					$this->resource_link->setSetting($name, $_POST[$name]);
+				} else {
+					$this->resource_link->setSetting($name, NULL);
+				}
+			}
+
+			// Delete any existing custom parameters
+			foreach ($this->resource_link->getSettings() as $name => $value) {
+				if (strpos($name, 'custom_') === 0) {
+					$this->resource_link->setSetting($name);
+				}
+			}
+
+			// Save custom parameters
+			foreach ($_POST as $name => $value) {
+				if (strpos($name, 'custom_') === 0) {
+					$this->resource_link->setSetting($name, $value);
+				}
+			}
+		}
+
+		#
+		### Set the user instance
+		#
+		$user_id = '';
+		if (isset($data['user_id'])) {
+			$user_id = trim($_POST['user_id']);
+		}
+		$this->LTIUser = new LTIUser($this->resource_link, $user_id);
+
+		#
+		### Set the user name
+		#
+		$firstname = (isset($_POST['lis_person_name_given'])) ? $_POST['lis_person_name_given'] : '';
+		$lastname = (isset($_POST['lis_person_name_family'])) ? $_POST['lis_person_name_family'] : '';
+		$fullname = (isset($_POST['lis_person_name_full'])) ? $_POST['lis_person_name_full'] : '';
+		$this->LTIUser->setNames($firstname, $lastname, $fullname);
+
+		#
+		### Set the user email
+		#
+		$email = (isset($_POST['lis_person_contact_email_primary'])) ? $_POST['lis_person_contact_email_primary'] : '';
+		$this->LTIUser->setEmail($email, $this->defaultEmail);
+
+		#
+		### Set the user roles
+		#
+		if (isset($_POST['roles'])) {
+			$this->LTIUser->roles = $this->Provider->parseRoles($_POST['roles']);
+		}
+
+		#
+		### Save the user instance
+		#
+		if (isset($_POST['lis_result_sourcedid'])) {
+			if ($this->user->lti_result_sourcedid != $_POST['lis_result_sourcedid']) {
+				$this->user->lti_result_sourcedid = $_POST['lis_result_sourcedid'];
+				$this->user->save();
+			}
+		} else if (!empty($this->user->lti_result_sourcedid)) {
+			$this->user->delete();
+		}
+
+		#
+		### Initialise the consumer and check for changes
+		#
+		$this->consumer->defaultEmail = $this->defaultEmail;
+		if ($this->consumer->lti_version != $_POST['lti_version']) {
+			$this->consumer->lti_version = $_POST['lti_version'];
+			$doSaveConsumer = TRUE;
+		}
+		if (isset($_POST['tool_consumer_instance_name'])) {
+			if ($this->consumer->consumer_name != $_POST['tool_consumer_instance_name']) {
+				$this->consumer->consumer_name = $_POST['tool_consumer_instance_name'];
+				$doSaveConsumer = TRUE;
+			}
+		}
+		if (isset($_POST['tool_consumer_info_product_family_code'])) {
+			$version = $_POST['tool_consumer_info_product_family_code'];
+			if (isset($_POST['tool_consumer_info_version'])) {
+				$version .= "-{$_POST['tool_consumer_info_version']}";
+			}
+
+			// do not delete any existing consumer version if none is passed
+			if ($this->consumer->consumer_version != $version) {
+				$this->consumer->consumer_version = $version;
+				$doSaveConsumer = TRUE;
+			}
+		} else if (isset($_POST['ext_lms']) && ($this->consumer->consumer_name != $_POST['ext_lms'])) {
+			$this->consumer->consumer_version = $_POST['ext_lms'];
+			$doSaveConsumer = TRUE;
+		}
+
+		if (isset($_POST['tool_consumer_instance_guid'])) {
+			if (is_null($this->consumer->consumer_guid)) {
+				$this->consumer->consumer_guid = $_POST['tool_consumer_instance_guid'];
+				$doSaveConsumer = TRUE;
+			} else if (!$this->consumer->protected) {
+				$doSaveConsumer = ($this->consumer->consumer_guid != $_POST['tool_consumer_instance_guid']);
+				if ($doSaveConsumer) {
+					$this->consumer->consumer_guid = $_POST['tool_consumer_instance_guid'];
+				}
+			}
+		}
+
+		if (isset($_POST['launch_presentation_css_url'])) {
+			if ($this->consumer->css_path != $_POST['launch_presentation_css_url']) {
+				$this->consumer->css_path = $_POST['launch_presentation_css_url'];
+				$doSaveConsumer = TRUE;
+			}
+		} else if (isset($_POST['ext_launch_presentation_css_url']) &&
+			 ($this->consumer->css_path != $_POST['ext_launch_presentation_css_url'])) {
+			$this->consumer->css_path = $_POST['ext_launch_presentation_css_url'];
+			$doSaveConsumer = TRUE;
+		} else if (!empty($this->consumer->css_path)) {
+			$this->consumer->css_path = NULL;
+			$doSaveConsumer = TRUE;
+		}
+
+		#
+		### Persist changes to consumer
+		#
+		if ($doSaveConsumer) {
+			$this->consumer->save();
+		}
+
+		if ($this->isOK && isset($this->resource_link)) {
+			#
+			### Check if a share arrangement is in place for this resource link
+			#
+			$this->isOK = $this->checkForShare();
+			#
+			### Persist changes to resource link
+			#
+			$this->resource_link->save();
+		}
+
+		return $this->isOK;
+
+	}
+
 
 /**
  * Call any callback function for the requested action.
@@ -150,7 +514,7 @@ class ProvidersController extends LtiAppController {
  */
 	protected function _doCallback() {
 
-		$method = $this->Provider->methodNames[$this->request->data['lti_message_type']];
+		$method = "_" . $this->Provider->methodNames[$this->request->data['lti_message_type']];
 		$this->$method();
 
 	}
@@ -202,11 +566,11 @@ class ProvidersController extends LtiAppController {
  *
  * @return string Output to be displayed (redirection, or display HTML or message)
  */
-	private function result() {
+	protected function _result() {
 
 		$ok = FALSE;
 		if (!$this->Provider->isOK) {
-			$ok = $this->onError();
+			$ok = $this->_onError();
 		}
 		if (!$ok) {
 			if (!$this->Provider->isOK) {
@@ -257,378 +621,6 @@ class ProvidersController extends LtiAppController {
 				$this->set('output', $this->Provider->output);
 			}
 		}
-
-	}
-
-/**
- * Check the authenticity of the LTI launch request.
- *
- * The consumer, resource link and user objects will be initialised if the request is valid.
- *
- * @return boolean True if the request has been successfully validated.
- */
-	private function authenticate() {
-
-#
-### Get the consumer
-#
-		$doSaveConsumer = FALSE;
-// Check all required launch parameters
-		$this->isOK = isset($_POST['lti_message_type']) && array_key_exists($_POST['lti_message_type'], $this->messageTypes);
-		if (!$this->isOK) {
-			$this->reason = 'Invalid or missing lti_message_type parameter.';
-		}
-		if ($this->isOK) {
-			$this->isOK = isset($_POST['lti_version']) && in_array($_POST['lti_version'], $this->LTI_VERSIONS);
-			if (!$this->isOK) {
-				$this->reason = 'Invalid or missing lti_version parameter.';
-			}
-		}
-		if ($this->isOK) {
-			if (($_POST['lti_message_type'] == 'basic-lti-launch-request') || ($_POST['lti_message_type'] == 'DashboardRequest')) {
-				$this->isOK = isset($_POST['resource_link_id']) && (strlen(trim($_POST['resource_link_id'])) > 0);
-				if (!$this->isOK) {
-					$this->reason = 'Missing resource link ID.';
-				}
-			} else if ($_POST['lti_message_type'] == 'ContentItemSelectionRequest') {
-				if (isset($_POST['accept_media_types']) && (strlen(trim($_POST['accept_media_types'])) > 0)) {
-					$mediaTypes = array_filter(explode(',', str_replace(' ', '', $_POST['accept_media_types'])), 'strlen');
-					$mediaTypes = array_unique($mediaTypes);
-					$this->isOK = count($mediaTypes) > 0;
-					if (!$this->isOK) {
-						$this->reason = 'No accept_media_types found.';
-					} else {
-						$this->mediaTypes = $mediaTypes;
-					}
-				} else {
-					$this->isOK = FALSE;
-				}
-				if ($this->isOK && isset($_POST['accept_presentation_document_targets']) && (strlen(trim($_POST['accept_presentation_document_targets'])) > 0)) {
-					$documentTargets = array_filter(explode(',', str_replace(' ', '', $_POST['accept_presentation_document_targets'])), 'strlen');
-					$documentTargets = array_unique($documentTargets);
-					$this->isOK = count($documentTargets) > 0;
-					if (!$this->isOK) {
-						$this->reason = 'Missing or empty accept_presentation_document_targets parameter.';
-					} else {
-						foreach ($documentTargets as $documentTarget) {
-							$this->isOK = $this->checkValue($documentTarget, array('embed', 'frame', 'iframe', 'window', 'popup', 'overlay', 'none'),
-								 'Invalid value in accept_presentation_document_targets parameter: %s.');
-							if (!$this->isOK) {
-								break;
-							}
-						}
-						if ($this->isOK) {
-							$this->documentTargets = $documentTargets;
-						}
-					}
-				} else {
-					$this->isOK = FALSE;
-				}
-				if ($this->isOK) {
-					$this->isOK = isset($_POST['content_item_return_url']) && (strlen(trim($_POST['content_item_return_url'])) > 0);
-					if (!$this->isOK) {
-						$this->reason = 'Missing content_item_return_url parameter.';
-					}
-				}
-			}
-		}
-// Check consumer key
-		if ($this->isOK) {
-			$this->isOK = isset($_POST['oauth_consumer_key']);
-			if (!$this->isOK) {
-				$this->reason = 'Missing consumer key.';
-			}
-		}
-		if ($this->isOK) {
-			$this->consumer = new LTI_Tool_Consumer($_POST['oauth_consumer_key'], $this->data_connector);
-			$this->isOK = !is_null($this->consumer->created);
-			if (!$this->isOK) {
-				$this->reason = 'Invalid consumer key.';
-			}
-		}
-		$now = time();
-		if ($this->isOK) {
-			$today = date('Y-m-d', $now);
-			if (is_null($this->consumer->last_access)) {
-				$doSaveConsumer = TRUE;
-			} else {
-				$last = date('Y-m-d', $this->consumer->last_access);
-				$doSaveConsumer = $doSaveConsumer || ($last != $today);
-			}
-			$this->consumer->last_access = $now;
-			try {
-				$store = new LTI_OAuthDataStore($this);
-				$server = new OAuthServer($store);
-				$method = new OAuthSignatureMethod_HMAC_SHA1();
-				$server->add_signature_method($method);
-				$request = OAuthRequest::from_request();
-				$res = $server->verify_request($request);
-			} catch (Exception $e) {
-				$this->isOK = FALSE;
-				if (empty($this->reason)) {
-					if ($this->debugMode) {
-						$consumer = new OAuthConsumer($this->consumer->getKey(), $this->consumer->secret);
-						$signature = $request->build_signature($method, $consumer, FALSE);
-						$this->reason = $e->getMessage();
-						if (empty($this->reason)) {
-							$this->reason = 'OAuth exception';
-						}
-						$this->details[] = 'Timestamp: ' . time();
-						$this->details[] = "Signature: {$signature}";
-						$this->details[] = "Base string: {$request->base_string}]";
-					} else {
-						$this->reason = 'OAuth signature check failed - perhaps an incorrect secret or timestamp.';
-					}
-				}
-			}
-		}
-		if ($this->isOK && $this->consumer->protected) {
-			if (!is_null($this->consumer->consumer_guid)) {
-				$this->isOK = isset($_POST['tool_consumer_instance_guid']) && !empty($_POST['tool_consumer_instance_guid']) &&
-					 ($this->consumer->consumer_guid == $_POST['tool_consumer_instance_guid']);
-				if (!$this->isOK) {
-					$this->reason = 'Request is from an invalid tool consumer.';
-				}
-			} else {
-				$this->isOK = isset($_POST['tool_consumer_instance_guid']);
-				if (!$this->isOK) {
-					$this->reason = 'A tool consumer GUID must be included in the launch request.';
-				}
-			}
-		}
-		if ($this->isOK) {
-			$this->isOK = $this->consumer->enabled;
-			if (!$this->isOK) {
-				$this->reason = 'Tool consumer has not been enabled by the tool provider.';
-			}
-		}
-		if ($this->isOK) {
-			$this->isOK = is_null($this->consumer->enable_from) || ($this->consumer->enable_from <= $now);
-			if ($this->isOK) {
-				$this->isOK = is_null($this->consumer->enable_until) || ($this->consumer->enable_until > $now);
-				if (!$this->isOK) {
-					$this->reason = 'Tool consumer access has expired.';
-				}
-			} else {
-				$this->reason = 'Tool consumer access is not yet available.';
-			}
-		}
-
-#
-### Validate other message parameter values
-#
-		if ($this->isOK) {
-			if ($_POST['lti_message_type'] != 'ContentItemSelectionRequest') {
-				if (isset($_POST['launch_presentation_document_target'])) {
-					$this->isOK = $this->checkValue($_POST['launch_presentation_document_target'], array('embed', 'frame', 'iframe', 'window', 'popup', 'overlay'),
-						 'Invalid value for launch_presentation_document_target parameter: %s.');
-				}
-			} else {
-				if (isset($_POST['accept_unsigned'])) {
-					$this->isOK = $this->checkValue($_POST['accept_unsigned'], array('true', 'false'), 'Invalid value for accept_unsigned parameter: %s.');
-				}
-				if ($this->isOK && isset($_POST['accept_multiple'])) {
-					$this->isOK = $this->checkValue($_POST['accept_multiple'], array('true', 'false'), 'Invalid value for accept_multiple parameter: %s.');
-				}
-				if ($this->isOK && isset($_POST['accept_copy_advice'])) {
-					$this->isOK = $this->checkValue($_POST['accept_copy_advice'], array('true', 'false'), 'Invalid value for accept_copy_advice parameter: %s.');
-				}
-				if ($this->isOK && isset($_POST['auto_create'])) {
-					$this->isOK = $this->checkValue($_POST['auto_create'], array('true', 'false'), 'Invalid value for auto_create parameter: %s.');
-				}
-				if ($this->isOK && isset($_POST['can_confirm'])) {
-					$this->isOK = $this->checkValue($_POST['can_confirm'], array('true', 'false'), 'Invalid value for can_confirm parameter: %s.');
-				}
-			}
-		}
-
-#
-### Validate message parameter constraints
-#
-		if ($this->isOK) {
-			$invalid_parameters = array();
-			foreach ($this->constraints as $name => $constraint) {
-				if (empty($constraint['messages']) || in_array($_POST['lti_message_type'], $constraint['messages'])) {
-					$ok = TRUE;
-					if ($constraint['required']) {
-						if (!isset($_POST[$name]) || (strlen(trim($_POST[$name])) <= 0)) {
-							$invalid_parameters[] = "{$name} (missing)";
-							$ok = FALSE;
-						}
-					}
-					if ($ok && !is_null($constraint['max_length']) && isset($_POST[$name])) {
-						if (strlen(trim($_POST[$name])) > $constraint['max_length']) {
-							$invalid_parameters[] = "{$name} (too long)";
-						}
-					}
-				}
-			}
-			if (count($invalid_parameters) > 0) {
-				$this->isOK = FALSE;
-				if (empty($this->reason)) {
-					$this->reason = 'Invalid parameter(s): ' . implode(', ', $invalid_parameters) . '.';
-				}
-			}
-		}
-
-		if ($this->isOK) {
-#
-### Set the request context/resource link
-#
-			if (isset($_POST['resource_link_id'])) {
-				$content_item_id = '';
-				if (isset($_POST['custom_content_item_id'])) {
-					$content_item_id = $_POST['custom_content_item_id'];
-				}
-				$this->resource_link = new LTI_Resource_Link($this->consumer, trim($_POST['resource_link_id']), $content_item_id);
-				if (isset($_POST['context_id'])) {
-					$this->resource_link->lti_context_id = trim($_POST['context_id']);
-				}
-				$this->resource_link->lti_resource_id = trim($_POST['resource_link_id']);
-				$title = '';
-				if (isset($_POST['context_title'])) {
-					$title = trim($_POST['context_title']);
-				}
-				if (isset($_POST['resource_link_title']) && (strlen(trim($_POST['resource_link_title'])) > 0)) {
-					if (!empty($title)) {
-						$title .= ': ';
-					}
-					$title .= trim($_POST['resource_link_title']);
-				}
-				if (empty($title)) {
-					$title = "Course {$this->resource_link->getId()}";
-				}
-				$this->resource_link->title = $title;
-// Save LTI parameters
-				foreach ($this->lti_settings_names as $name) {
-					if (isset($_POST[$name])) {
-						$this->resource_link->setSetting($name, $_POST[$name]);
-					} else {
-						$this->resource_link->setSetting($name, NULL);
-					}
-				}
-// Delete any existing custom parameters
-				foreach ($this->resource_link->getSettings() as $name => $value) {
-					if (strpos($name, 'custom_') === 0) {
-						$this->resource_link->setSetting($name);
-					}
-				}
-// Save custom parameters
-				foreach ($_POST as $name => $value) {
-					if (strpos($name, 'custom_') === 0) {
-						$this->resource_link->setSetting($name, $value);
-					}
-				}
-			}
-#
-### Set the user instance
-#
-			$user_id = '';
-			if (isset($_POST['user_id'])) {
-				$user_id = trim($_POST['user_id']);
-			}
-			$this->user = new LTI_User($this->resource_link, $user_id);
-#
-### Set the user name
-#
-			$firstname = (isset($_POST['lis_person_name_given'])) ? $_POST['lis_person_name_given'] : '';
-			$lastname = (isset($_POST['lis_person_name_family'])) ? $_POST['lis_person_name_family'] : '';
-			$fullname = (isset($_POST['lis_person_name_full'])) ? $_POST['lis_person_name_full'] : '';
-			$this->user->setNames($firstname, $lastname, $fullname);
-#
-### Set the user email
-#
-			$email = (isset($_POST['lis_person_contact_email_primary'])) ? $_POST['lis_person_contact_email_primary'] : '';
-			$this->user->setEmail($email, $this->defaultEmail);
-#
-### Set the user roles
-#
-			if (isset($_POST['roles'])) {
-				$this->user->roles = LTI_Tool_Provider::parseRoles($_POST['roles']);
-			}
-#
-### Save the user instance
-#
-			if (isset($_POST['lis_result_sourcedid'])) {
-				if ($this->user->lti_result_sourcedid != $_POST['lis_result_sourcedid']) {
-					$this->user->lti_result_sourcedid = $_POST['lis_result_sourcedid'];
-					$this->user->save();
-				}
-			} else if (!empty($this->user->lti_result_sourcedid)) {
-				$this->user->delete();
-			}
-#
-### Initialise the consumer and check for changes
-#
-			$this->consumer->defaultEmail = $this->defaultEmail;
-			if ($this->consumer->lti_version != $_POST['lti_version']) {
-				$this->consumer->lti_version = $_POST['lti_version'];
-				$doSaveConsumer = TRUE;
-			}
-			if (isset($_POST['tool_consumer_instance_name'])) {
-				if ($this->consumer->consumer_name != $_POST['tool_consumer_instance_name']) {
-					$this->consumer->consumer_name = $_POST['tool_consumer_instance_name'];
-					$doSaveConsumer = TRUE;
-				}
-			}
-			if (isset($_POST['tool_consumer_info_product_family_code'])) {
-				$version = $_POST['tool_consumer_info_product_family_code'];
-				if (isset($_POST['tool_consumer_info_version'])) {
-					$version .= "-{$_POST['tool_consumer_info_version']}";
-				}
-// do not delete any existing consumer version if none is passed
-				if ($this->consumer->consumer_version != $version) {
-					$this->consumer->consumer_version = $version;
-					$doSaveConsumer = TRUE;
-				}
-			} else if (isset($_POST['ext_lms']) && ($this->consumer->consumer_name != $_POST['ext_lms'])) {
-				$this->consumer->consumer_version = $_POST['ext_lms'];
-				$doSaveConsumer = TRUE;
-			}
-			if (isset($_POST['tool_consumer_instance_guid'])) {
-				if (is_null($this->consumer->consumer_guid)) {
-					$this->consumer->consumer_guid = $_POST['tool_consumer_instance_guid'];
-					$doSaveConsumer = TRUE;
-				} else if (!$this->consumer->protected) {
-					$doSaveConsumer = ($this->consumer->consumer_guid != $_POST['tool_consumer_instance_guid']);
-					if ($doSaveConsumer) {
-						$this->consumer->consumer_guid = $_POST['tool_consumer_instance_guid'];
-					}
-				}
-			}
-			if (isset($_POST['launch_presentation_css_url'])) {
-				if ($this->consumer->css_path != $_POST['launch_presentation_css_url']) {
-					$this->consumer->css_path = $_POST['launch_presentation_css_url'];
-					$doSaveConsumer = TRUE;
-				}
-			} else if (isset($_POST['ext_launch_presentation_css_url']) &&
-				 ($this->consumer->css_path != $_POST['ext_launch_presentation_css_url'])) {
-				$this->consumer->css_path = $_POST['ext_launch_presentation_css_url'];
-				$doSaveConsumer = TRUE;
-			} else if (!empty($this->consumer->css_path)) {
-				$this->consumer->css_path = NULL;
-				$doSaveConsumer = TRUE;
-			}
-		}
-#
-### Persist changes to consumer
-#
-		if ($doSaveConsumer) {
-			$this->consumer->save();
-		}
-
-		if ($this->isOK && isset($this->resource_link)) {
-#
-### Check if a share arrangement is in place for this resource link
-#
-			$this->isOK = $this->checkForShare();
-#
-### Persist changes to resource link
-#
-			$this->resource_link->save();
-		}
-
-		return $this->isOK;
 
 	}
 

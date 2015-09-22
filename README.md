@@ -139,13 +139,14 @@ These are all of the known values that can be passed from the consumer to the pr
 
 ## Other Resources
 
-* Code / Libraries
+### Code / Libraries
 * [The list of apps on this site's home page is available as a **jsonp** list][14]
 * [Source code for LTI **ruby** gem][1]
 * [Source code for LTI **java** and **php** libraries][2]
 * [How to use the **python** oauth libraries with LTI, with a link to an example implementation][3]
 * [LTI samples written for .NET][4]
-* Documentation
+
+### Documentation
 * [Examples of apps that leverage LTI extensions][15]
 * [Canvas documentation on LTI external tools][12]
 * [Blackboard presentation on LTI (pdf - 3.6MB)][16]

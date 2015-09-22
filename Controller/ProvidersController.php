@@ -40,6 +40,13 @@ class ProvidersController extends LtiAppController {
 		$this->_validate();
 
 		if ($this->_authenticate()) {
+
+			$this->_setResourceLink();
+
+			$this->_setUser();
+
+			$this->_setConsumer();
+
 			$this->_doCallback();
 		}
 		$this->_result();
@@ -294,17 +301,6 @@ class ProvidersController extends LtiAppController {
 			return false;
 		}
 
-		$doSaveConsumer = FALSE;
-
-		$now = time();
-		$today = date('Y-m-d', $now);
-		if (empty($this->Consumer->last_access)) {
-			$doSaveConsumer = TRUE;
-		} else {
-			$last = date('Y-m-d', $this->Consumer->last_access);
-			$doSaveConsumer = $doSaveConsumer || ($last != $today);
-		}
-		$this->Consumer->last_access = $now;
 		try {
 			$this->loadModel('Lti.OAuthStore');
 			$store = new OAuthStore($this->Provider, $this->Consumer);
@@ -333,117 +329,173 @@ class ProvidersController extends LtiAppController {
 			return false;
 		}
 
+		return true;
+
+	}
+
+	protected function _setResourceLink() {
+		$data = $this->request->data;
+		if (empty($data['resource_link_id'])) {
+			return;
+		}
+
+		if (empty($this->Consumer->consumer_key)) {
+			return;
+		}
+		#
 		### Set the request context/resource link
 		#
-		if (isset($data['resource_link_id'])) {
-			$content_item_id = '';
-			if (isset($_POST['custom_content_item_id'])) {
-				$content_item_id = $_POST['custom_content_item_id'];
-			}
-			$this->resource_link = new ResourceLink($this->consumer, trim($_POST['resource_link_id']), $content_item_id);
-			if (isset($_POST['context_id'])) {
-				$this->resource_link->lti_context_id = trim($_POST['context_id']);
-			}
-			$this->resource_link->lti_resource_id = trim($_POST['resource_link_id']);
-			$title = '';
-			if (isset($_POST['context_title'])) {
-				$title = trim($_POST['context_title']);
-			}
-			if (isset($_POST['resource_link_title']) && (strlen(trim($_POST['resource_link_title'])) > 0)) {
-				if (!empty($title)) {
-					$title .= ': ';
-				}
-				$title .= trim($_POST['resource_link_title']);
-			}
-			if (empty($title)) {
-				$title = "Course {$this->resource_link->getId()}";
-			}
-			$this->resource_link->title = $title;
+		$content_item_id = '';
+		if (!empty($data['custom_content_item_id'])) {
+			$content_item_id = $data['custom_content_item_id'];
+		}
 
-			// Save LTI parameters
-			foreach ($this->lti_settings_names as $name) {
-				if (isset($_POST[$name])) {
-					$this->resource_link->setSetting($name, $_POST[$name]);
-				} else {
-					$this->resource_link->setSetting($name, NULL);
-				}
-			}
+		// first try loading the resource link for the specific content item
+		$this->loadModel('Lti.ResourceLink');
+		$this->ResourceLink->id = trim($data['resource_link_id']);
+		$conditions =  [
+				'consumer_key' => $this->Consumer->consumer_key,
+				'context_id' => $this->ResourceLink->id
+		];
+		$link = $this->ResourceLink->find('first', ['conditions' => $conditions]);
 
-			// Delete any existing custom parameters
-			foreach ($this->resource_link->getSettings() as $name => $value) {
-				if (strpos($name, 'custom_') === 0) {
-					$this->resource_link->setSetting($name);
-				}
-			}
+		// however if we can't find this, load for the
+		if (empty($link) and !empty($content_item_id)) {
+			$conditions['context_id'] = $this->ResourceLink->id = $content_item_id;
+			$link = $this->ResourceLink->find('first', ['conditions' => $conditions]);
+		}
 
-			// Save custom parameters
-			foreach ($_POST as $name => $value) {
-				if (strpos($name, 'custom_') === 0) {
-					$this->resource_link->setSetting($name, $value);
-				}
+
+		if (!empty($data['context_id'])) {
+			$this->ResourceLink->lti_context_id = trim($data['context_id']);
+		}
+
+		$this->ResourceLink->lti_resource_id = trim($data['resource_link_id']);
+		$title = '';
+		if (!empty($data['context_title'])) {
+			$title = trim($data['context_title']);
+		}
+		if (!empty($data['resource_link_title']) && (strlen(trim($data['resource_link_title'])) > 0)) {
+			if (!empty($title)) {
+				$title .= ': ';
+			}
+			$title .= trim($data['resource_link_title']);
+		}
+		if (empty($title)) {
+			$title = "Course {$this->ResourceLink->id}";
+		}
+		$this->ResourceLink->title = $title;
+
+		// Save LTI parameters
+		foreach ($this->Provider->lti_settings_names as $name) {
+			if (!empty($data[$name])) {
+				$this->ResourceLink->setSetting($name, $data[$name]);
+			} else {
+				$this->ResourceLink->setSetting($name, NULL);
 			}
 		}
 
+		// Delete any existing custom parameters
+		foreach ($this->ResourceLink->getSettings() as $name => $value) {
+			if (strpos($name, 'custom_') === 0) {
+				$this->ResourceLink->setSetting($name);
+			}
+		}
+
+		// Save custom parameters
+		foreach ($data as $name => $value) {
+			if (strpos($name, 'custom_') === 0) {
+				$this->ResourceLink->setSetting($name, $value);
+			}
+		}
+
+		#
+		### Check if a share arrangement is in place for this resource link
+		#
+		$this->Provider->isOK = $this->_checkForShare();
+
+		#
+		### Persist changes to resource link
+		#
+		$this->ResourceLink->save();
+	}
+
+	protected function _setUser() {
+		$data = $this->request->data;
 		#
 		### Set the user instance
 		#
 		$user_id = '';
 		if (isset($data['user_id'])) {
-			$user_id = trim($_POST['user_id']);
+			$user_id = trim($data['user_id']);
 		}
 		$this->LTIUser = new LTIUser($this->resource_link, $user_id);
 
 		#
 		### Set the user name
 		#
-		$firstname = (isset($_POST['lis_person_name_given'])) ? $_POST['lis_person_name_given'] : '';
-		$lastname = (isset($_POST['lis_person_name_family'])) ? $_POST['lis_person_name_family'] : '';
-		$fullname = (isset($_POST['lis_person_name_full'])) ? $_POST['lis_person_name_full'] : '';
+		$firstname = (isset($data['lis_person_name_given'])) ? $data['lis_person_name_given'] : '';
+		$lastname = (isset($data['lis_person_name_family'])) ? $data['lis_person_name_family'] : '';
+		$fullname = (isset($data['lis_person_name_full'])) ? $data['lis_person_name_full'] : '';
 		$this->LTIUser->setNames($firstname, $lastname, $fullname);
 
 		#
 		### Set the user email
 		#
-		$email = (isset($_POST['lis_person_contact_email_primary'])) ? $_POST['lis_person_contact_email_primary'] : '';
+		$email = (isset($data['lis_person_contact_email_primary'])) ? $data['lis_person_contact_email_primary'] : '';
 		$this->LTIUser->setEmail($email, $this->defaultEmail);
 
 		#
 		### Set the user roles
 		#
-		if (isset($_POST['roles'])) {
-			$this->LTIUser->roles = $this->Provider->parseRoles($_POST['roles']);
+		if (isset($data['roles'])) {
+			$this->LTIUser->roles = $this->Provider->parseRoles($data['roles']);
 		}
 
 		#
 		### Save the user instance
 		#
-		if (isset($_POST['lis_result_sourcedid'])) {
-			if ($this->user->lti_result_sourcedid != $_POST['lis_result_sourcedid']) {
-				$this->user->lti_result_sourcedid = $_POST['lis_result_sourcedid'];
+		if (isset($data['lis_result_sourcedid'])) {
+			if ($this->user->lti_result_sourcedid != $data['lis_result_sourcedid']) {
+				$this->user->lti_result_sourcedid = $data['lis_result_sourcedid'];
 				$this->user->save();
 			}
 		} else if (!empty($this->user->lti_result_sourcedid)) {
 			$this->user->delete();
 		}
 
-		#
+	}
+
+	protected function _setConsumer() {
+				#
 		### Initialise the consumer and check for changes
 		#
+		$doSaveConsumer = FALSE;
+
+		$now = time();
+		$today = date('Y-m-d', $now);
+		if (empty($this->Consumer->last_access)) {
+			$doSaveConsumer = TRUE;
+		} else {
+			$last = date('Y-m-d', $this->Consumer->last_access);
+			$doSaveConsumer = $doSaveConsumer || ($last != $today);
+		}
+		$this->Consumer->last_access = $now;
 		$this->consumer->defaultEmail = $this->defaultEmail;
-		if ($this->consumer->lti_version != $_POST['lti_version']) {
-			$this->consumer->lti_version = $_POST['lti_version'];
+		if ($this->consumer->lti_version != $data['lti_version']) {
+			$this->consumer->lti_version = $data['lti_version'];
 			$doSaveConsumer = TRUE;
 		}
-		if (isset($_POST['tool_consumer_instance_name'])) {
-			if ($this->consumer->consumer_name != $_POST['tool_consumer_instance_name']) {
-				$this->consumer->consumer_name = $_POST['tool_consumer_instance_name'];
+		if (isset($data['tool_consumer_instance_name'])) {
+			if ($this->consumer->consumer_name != $data['tool_consumer_instance_name']) {
+				$this->consumer->consumer_name = $data['tool_consumer_instance_name'];
 				$doSaveConsumer = TRUE;
 			}
 		}
-		if (isset($_POST['tool_consumer_info_product_family_code'])) {
-			$version = $_POST['tool_consumer_info_product_family_code'];
-			if (isset($_POST['tool_consumer_info_version'])) {
-				$version .= "-{$_POST['tool_consumer_info_version']}";
+		if (isset($data['tool_consumer_info_product_family_code'])) {
+			$version = $data['tool_consumer_info_product_family_code'];
+			if (isset($data['tool_consumer_info_version'])) {
+				$version .= "-{$data['tool_consumer_info_version']}";
 			}
 
 			// do not delete any existing consumer version if none is passed
@@ -451,31 +503,31 @@ class ProvidersController extends LtiAppController {
 				$this->consumer->consumer_version = $version;
 				$doSaveConsumer = TRUE;
 			}
-		} else if (isset($_POST['ext_lms']) && ($this->consumer->consumer_name != $_POST['ext_lms'])) {
-			$this->consumer->consumer_version = $_POST['ext_lms'];
+		} else if (isset($data['ext_lms']) && ($this->consumer->consumer_name != $data['ext_lms'])) {
+			$this->consumer->consumer_version = $data['ext_lms'];
 			$doSaveConsumer = TRUE;
 		}
 
-		if (isset($_POST['tool_consumer_instance_guid'])) {
+		if (isset($data['tool_consumer_instance_guid'])) {
 			if (is_null($this->consumer->consumer_guid)) {
-				$this->consumer->consumer_guid = $_POST['tool_consumer_instance_guid'];
+				$this->consumer->consumer_guid = $data['tool_consumer_instance_guid'];
 				$doSaveConsumer = TRUE;
 			} else if (!$this->consumer->protected) {
-				$doSaveConsumer = ($this->consumer->consumer_guid != $_POST['tool_consumer_instance_guid']);
+				$doSaveConsumer = ($this->consumer->consumer_guid != $data['tool_consumer_instance_guid']);
 				if ($doSaveConsumer) {
-					$this->consumer->consumer_guid = $_POST['tool_consumer_instance_guid'];
+					$this->consumer->consumer_guid = $data['tool_consumer_instance_guid'];
 				}
 			}
 		}
 
-		if (isset($_POST['launch_presentation_css_url'])) {
-			if ($this->consumer->css_path != $_POST['launch_presentation_css_url']) {
-				$this->consumer->css_path = $_POST['launch_presentation_css_url'];
+		if (isset($data['launch_presentation_css_url'])) {
+			if ($this->consumer->css_path != $data['launch_presentation_css_url']) {
+				$this->consumer->css_path = $data['launch_presentation_css_url'];
 				$doSaveConsumer = TRUE;
 			}
-		} else if (isset($_POST['ext_launch_presentation_css_url']) &&
-			 ($this->consumer->css_path != $_POST['ext_launch_presentation_css_url'])) {
-			$this->consumer->css_path = $_POST['ext_launch_presentation_css_url'];
+		} else if (isset($data['ext_launch_presentation_css_url']) &&
+			 ($this->consumer->css_path != $data['ext_launch_presentation_css_url'])) {
+			$this->consumer->css_path = $data['ext_launch_presentation_css_url'];
 			$doSaveConsumer = TRUE;
 		} else if (!empty($this->consumer->css_path)) {
 			$this->consumer->css_path = NULL;
@@ -489,22 +541,7 @@ class ProvidersController extends LtiAppController {
 			$this->consumer->save();
 		}
 
-		if ($this->isOK && isset($this->resource_link)) {
-			#
-			### Check if a share arrangement is in place for this resource link
-			#
-			$this->isOK = $this->checkForShare();
-			#
-			### Persist changes to resource link
-			#
-			$this->resource_link->save();
-		}
-
-		return $this->isOK;
-
 	}
-
-
 /**
  * Call any callback function for the requested action.
  *
@@ -629,7 +666,7 @@ class ProvidersController extends LtiAppController {
  *
  * @return boolean True if no error is reported
  */
-	private function checkForShare() {
+	protected function _checkForShare() {
 
 		$ok = TRUE;
 		$doSaveResourceLink = TRUE;
@@ -637,14 +674,14 @@ class ProvidersController extends LtiAppController {
 		$key = $this->resource_link->primary_consumer_key;
 		$id = $this->resource_link->primary_resource_link_id;
 
-		$shareRequest = isset($_POST['custom_share_key']) && !empty($_POST['custom_share_key']);
+		$shareRequest = isset($data['custom_share_key']) && !empty($data['custom_share_key']);
 		if ($shareRequest) {
 			if (!$this->allowSharing) {
 				$ok = FALSE;
 				$this->reason = 'Your sharing request has been refused because sharing is not being permitted.';
 			} else {
 // Check if this is a new share key
-				$share_key = new LTI_Resource_Link_Share_Key($this->resource_link, $_POST['custom_share_key']);
+				$share_key = new LTI_Resource_Link_Share_Key($this->resource_link, $data['custom_share_key']);
 				if (!is_null($share_key->primary_consumer_key) && !is_null($share_key->primary_resource_link_id)) {
 // Update resource link with sharing primary resource link details
 					$key = $share_key->primary_consumer_key;

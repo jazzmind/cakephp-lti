@@ -3,11 +3,11 @@
 </div>
 <div class='content-container'>
 <?php
-if ($error):
+if (!empty($error)):
 	echo "Error: $error";
-elseif ($message):
+elseif (!empty($message)):
 	echo "Message: $message";
-else:
+elseif (!empty($output)):
 	echo $output;
 endif;
 pr($this->request->data);

@@ -6,7 +6,7 @@ class Consumer extends LtiAppModel {
 
 	public $actsAs = ['Containable'];
 	public $primaryKey = 'consumer_key';
-
+	public $displayName = 'name';
 
 	public $hasMany = [
 		'Nonces' => [
@@ -62,7 +62,7 @@ class Consumer extends LtiAppModel {
 /**
  * @var boolean Whether the tool consumer instance is protected by matching the consumer_guid value in incoming requests.
  */
-	public $protected = FALSE;
+	public $protect = FALSE;
 /**
  * @var boolean Whether the tool consumer instance is enabled to accept incoming connection requests.
  */
@@ -102,6 +102,23 @@ class Consumer extends LtiAppModel {
 	public $consumer_key = NULL;
 
 
+	protected $_schema = [
+					'consumer_key' => ['type' => 'string', 'null' => false, 'length' => 255],
+					'name' => ['type' => 'string', 'null' => false, 'length' => 45],
+					'secret' => ['type' => 'string', 'null' => false, 'length' => 32],
+					'lti_version' => ['type' => 'string', 'null' => true, 'length' => 12],
+					'consumer_name' => ['type' => 'string', 'null' => true, 'length' => 255],
+					'consumer_version' => ['type' => 'string', 'null' => true, 'length' => 255],
+					'consumer_guid' => ['type' => 'string', 'null' => true, 'length' => 255],
+					'css_path' => ['type' => 'string', 'null' => true, 'length' => 255],
+					'protect' => ['type' => 'boolean', 'null' => false, 'default' => true ],
+					'enabled' => ['type' => 'boolean', 'null' => false, 'default' => false ],
+					'enable_from' => ['type' => 'datetime', 'null' => true],
+					'enable_until' => ['type' => 'datetime', 'null' => true],
+					'last_access' => ['type' => 'date', 'null' => true],
+					'created' => ['type' => 'datetime', 'null' => false],
+					'modified' => ['type' => 'datetime', 'null' => false],
+	];
 /**
  * Class constructor.
  *
@@ -121,17 +138,6 @@ class Consumer extends LtiAppModel {
 // 	}
 
 
-	public function afterFind($results, $primary = false) {
-		parent::afterFind($results, $primary);
-		if (!$primary or empty($results) or !isset($results[0]['Consumer']) or count($results) > 1) {
-			return $results;
-		}
-		foreach ($results[0]['Consumer'] as $key => $value) {
-			// set each result key as an object variable
-			$this->{$key} = $value;
-		}
-		return $results;
-	}
 
 
 /**

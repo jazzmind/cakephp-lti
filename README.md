@@ -28,6 +28,9 @@ The tool provider should keep a list of consumers that are authorised to connect
 
 When a launch request arrives, some parameters might allow the tool provider to communicate back to the tool consumer. E.g. return IDs, which should be saved.
 
+## How it works in Practera
+
+When configuring a program in Practera, you can add one or more consumers to that program. This will let you put in a name for the Consumer (e.g. Moodle) and then it will give you a key and a secret for that consumer, along with instructions on how to add Practera as a Tool Provider into common LMS systems (e.g. Moodle, Blackboard, Canvas). When you go to that consumer and add a tool provider, you'll put in the key and the secret.
 
 # Writing LTI Stuff
 

@@ -8,73 +8,7 @@ class ResourceLinksController extends LtiAppController {
 
 
 
-/**
- * Get a setting value.
- *
- * @param string $name    Name of setting
- * @param string $default Value to return if the setting does not exist (optional, default is an empty string)
- *
- * @return string Setting value
- */
-	public function getSetting($name, $default = '') {
 
-		if (array_key_exists($name, $this->settings)) {
-			$value = $this->settings[$name];
-		} else {
-			$value = $default;
-		}
-
-		return $value;
-
-	}
-
-/**
- * Set a setting value.
- *
- * @param string $name  Name of setting
- * @param string $value Value to set, use an empty value to delete a setting (optional, default is null)
- */
-	public function setSetting($name, $value = NULL) {
-
-		$old_value = $this->getSetting($name);
-		if ($value != $old_value) {
-			if (!empty($value)) {
-				$this->settings[$name] = $value;
-			} else {
-				unset($this->settings[$name]);
-			}
-			$this->settings_changed = TRUE;
-		}
-
-	}
-
-/**
- * Get an array of all setting values.
- *
- * @return array Associative array of setting values
- */
-	public function getSettings() {
-
-		return $this->settings;
-
-	}
-
-/**
- * Save setting values.
- *
- * @return boolean True if the settings were successfully saved
- */
-	public function saveSettings() {
-
-		if ($this->settings_changed) {
-			$ok = $this->save();
-		} else {
-			$ok = TRUE;
-		}
-
-		return $ok;
-
-	}
 
 /**
  * Check if the Outcomes service is supported.

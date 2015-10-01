@@ -3056,6 +3056,7 @@ class LTI_User {
 			$this->fullname = "{$this->firstname} {$this->lastname}";
 		}
 
+
 	}
 
 /**

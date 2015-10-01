@@ -4,12 +4,10 @@ App::uses('LTIAppModel', 'LTI.Model');
 class Nonce extends LTIAppModel {
 
 	public $actsAs = ['Containable'];
-	public $primaryKey = 'consumer_key';
 
 	public $belongsTo = [
 		'Consumer' => [
 			'className' => 'Lti.Consumer',
-			'dependent' => true,
 			'foreign_key' => 'consumer_key',
 		],
 	];

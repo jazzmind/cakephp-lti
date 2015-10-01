@@ -8,12 +8,10 @@ class ShareKey extends LtiAppModel {
 	public $belongsTo = [
 		'Consumer' => [
 			'className' => 'Lti.Consumer',
-			'dependent' => true,
 			'foreignKey' => 'primary_consumer_key'
 		],
-		'Context' => [
-			'className' => 'Lti.Context',
-			'dependent' => true,
+		'ResourceLink' => [
+			'className' => 'Lti.ResourceLink',
 			'foreignKey' => 'primary_context_id'
 		],
 	];

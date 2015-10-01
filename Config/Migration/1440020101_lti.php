@@ -25,8 +25,8 @@ class Lti extends CakeMigration {
 					'consumer_version' => ['type' => 'string', 'null' => true, 'length' => 255],
 					'consumer_guid' => ['type' => 'string', 'null' => true, 'length' => 255],
 					'css_path' => ['type' => 'string', 'null' => true, 'length' => 255],
-					'protected' => ['type' => 'boolean', 'null' => false],
-					'enabled' => ['type' => 'boolean', 'null' => false],
+					'protect' => ['type' => 'boolean', 'null' => false, 'default' => true],
+					'enabled' => ['type' => 'boolean', 'null' => false, 'default' => false],
 					'enable_from' => ['type' => 'datetime', 'null' => true],
 					'enable_until' => ['type' => 'datetime', 'null' => true],
 					'last_access' => ['type' => 'date', 'null' => true],
@@ -38,6 +38,7 @@ class Lti extends CakeMigration {
 					'tableParameters' => [],
 				],
 				'lti_contexts' => [
+					'id' => ['type' => 'integer', 'null' => false, 'key' => 'primary'],
 					'consumer_key' => ['type' => 'string', 'null' => false, 'length' => 255],
 					'context_id' => ['type' => 'string', 'null' => false, 'length' => 255],
 					'lti_context_id' => ['type' => 'string', 'null' => true, 'length' => 255],
@@ -50,11 +51,13 @@ class Lti extends CakeMigration {
 					'created' => ['type' => 'datetime', 'null' => false],
 					'modified' => ['type' => 'datetime', 'null' => false],
 					'indexes' => [
+						'PRIMARY' => ['unique' => true, 'column' => 'id'],
 						'context_unique' => ['unique' => true, 'column' => ['consumer_key', 'context_id']],
 					],
 					'tableParameters' => [],
 				],
 				'lti_users' => [
+					'id' => ['type' => 'integer', 'null' => false, 'key' => 'primary' ],
 					'consumer_key' => ['type' => 'string', 'null' => false, 'length' => 255],
 					'context_id' => ['type' => 'string', 'null' => false, 'length' => 255],
 					'user_id' => ['type' => 'string', 'null' => false, 'length' => 255],
@@ -62,29 +65,32 @@ class Lti extends CakeMigration {
 					'created' => ['type' => 'datetime', 'null' => false],
 					'modified' => ['type' => 'datetime', 'null' => false],
 					'indexes' => [
+						'PRIMARY' => ['unique' => true, 'column' => 'id'],
 						'user_unique' => ['unique' => true, 'column' => ['consumer_key', 'context_id', 'user_id']],
 					],
 					'tableParameters' => [],
 				],
 
 				'lti_nonces' => [
+					'id' => ['type' => 'integer', 'null' => false, 'key' => 'primary' ],
 					'consumer_key' => ['type' => 'string', 'null' => false, 'length' => 255],
 					'value' => ['type' => 'string', 'null' => false, 'length' => 32],
 					'expires' => ['type' => 'datetime', 'null' => false],
 					'indexes' => [
+						'PRIMARY' => ['unique' => true, 'column' => 'id'],
 						'nonce_unique' => ['unique' => true, 'column' => ['consumer_key', 'value']],
 					],
 					'tableParameters' => [],
 				],
 
 				'lti_share_keys' => [
-					'share_key_id' => ['type' => 'string', 'null' => false, 'length' => 32],
+					'id' => ['type' => 'integer', 'null' => false, 'key' => 'primary'],
 					'primary_consumer_key' => ['type' => 'string', 'null' => false, 'length' => 255],
 					'primary_context_id' => ['type' => 'string', 'null' => false, 'length' => 255],
 					'auto_approve' => ['type' => 'boolean', 'null' => false],
 					'expires' => ['type' => 'datetime', 'null' => false],
 					'indexes' => [
-						'PRIMARY' => ['unique' => true, 'column' => 'share_key_id'],
+						'PRIMARY' => ['unique' => true, 'column' => 'id'],
 					],
 					'tableParameters' => [],
 				],

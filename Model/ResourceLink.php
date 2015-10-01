@@ -5,16 +5,23 @@ class ResourceLink extends LtiAppModel {
 
 	public $actsAs = ['Containable'];
 	public $useTable = 'contexts';
+	public $primaryKey = 'id';
+	public $displayName = 'title';
 
 	public $belongsTo = [
 		'Consumer' => [
 			'className' => 'Lti.Consumer',
-			'dependent' => true,
 			'foreignKey' => 'consumer_key'
 		],
 	];
 
-
+	public $hasMany = [
+		'ShareKey' => [
+			'className' => 'Lti.ShareKey',
+			'dependent' => true,
+			'foreignKey' => 'primary_consumer_key'
+		],
+	];
 /**
  * Read action.
  */
@@ -72,7 +79,7 @@ class ResourceLink extends LtiAppModel {
 /**
  * @var array Setting values (LTI parameters, custom parameters and local parameters).
  */
-	public $settings = NULL;
+	public $settings = [];
 /**
  * @var array User group sets (NULL if the consumer does not support the groups enhancement)
  */
@@ -140,9 +147,38 @@ class ResourceLink extends LtiAppModel {
  */
 	public $ext_nodes = NULL;
 
+	// protected $_schema = [
+	// 	'id' => ['type' => 'integer', 'null' => false, 'key' => 'primary'],
+	// 	'consumer_key' => ['type' => 'string', 'null' => false, 'length' => 255],
+	// 	'context_id' => ['type' => 'string', 'null' => false, 'length' => 255],
+	// 	'lti_context_id' => ['type' => 'string', 'null' => true, 'length' => 255],
+	// 	'lti_resource_id' => ['type' => 'string', 'null' => true, 'length' => 255],
+	// 	'title' => ['type' => 'string', 'null' => false, 'length' => 255],
+	// 	'primary_consumer_key' => ['type' => 'string', 'null' => true, 'length' => 255],
+	// 	'primary_context_id' => ['type' => 'string', 'null' => true, 'length' => 255],
+	// 	'share_approved' => ['type' => 'boolean', 'null' => true],
+	// 	'settings' => ['type' => 'text', 'null' => true, 'length' => 1073741824],
+	// 	'created' => ['type' => 'datetime', 'null' => false],
+	// 	'modified' => ['type' => 'datetime', 'null' => false],
+	// ];
 
+	public function afterFind($results, $primary = false) {
+		foreach ($results as $k => $result) {
+			if (!empty($result['ResourceLink']['settings'])) {
+				$results[$k]['ResourceLink']['settings'] = (array) json_decode($result['ResourceLink']['settings']);
+			}
+		}
+		return parent::afterFind($results, $primary);
+	}
 
-
+	// we should have enough info to bake a badge
+	public function beforeSave($options = []) {
+		parent::beforeSave($options);
+		if (is_array($this->data['ResourceLink']['settings'])) {
+			$this->data['ResourceLink']['settings'] = json_encode($this->data['ResourceLink']['settings']);
+		}
+		return true;
+	}
 /**
  * Get a setting value.
  *
@@ -152,6 +188,9 @@ class ResourceLink extends LtiAppModel {
  * @return string Setting value
  */
 	public function getSetting($name, $default = '') {
+		if (empty($this->settings)) {
+			return $default;
+		}
 
 		if (array_key_exists($name, $this->settings)) {
 			$value = $this->settings[$name];

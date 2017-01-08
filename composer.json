@@ -1,0 +1,14 @@
+
+{
+    "name": "intersective/cakephp-lti",
+    "description": "LTI plugin for Practera core",
+    "type": "cakephp-plugin",
+    "homepage": "http://www.practera.com",
+    "license": "MIT",
+    "support": {
+        "email": "support@intersective.com"
+    },
+    "require": {
+        "composer/installers": "~1.0"
+    }
+}

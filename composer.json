@@ -1,6 +1,6 @@
 
 {
-    "name": "intersective/cakephp-lti",
+    "name": "intersective/lti",
     "description": "LTI plugin for Practera core",
     "type": "cakephp-plugin",
     "homepage": "http://www.practera.com",

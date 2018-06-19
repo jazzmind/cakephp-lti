@@ -37,6 +37,7 @@ class ProvidersController extends LtiAppController {
 		#
 		### Perform action
 		#
+
 		$this->_init();
 
 		$this->_validate();
@@ -79,7 +80,7 @@ class ProvidersController extends LtiAppController {
 		#
 		### Set debug mode
 		#
-		if (!empty($this->request->data['custom_debug'])) {
+		if (true || !empty($this->request->data['custom_debug'])) {
 			$this->Provider->debugMode = true;
 		}
 
@@ -179,18 +180,22 @@ class ProvidersController extends LtiAppController {
 		### Get the consumer
 		#
 		$this->loadModel('Lti.Consumer');
-		$this->Consumer->id = $data['oauth_consumer_key'];
-		$this->Consumer->read();
-		if (empty($this->Consumer->consumer_key)) {
+
+		$result = $this->Consumer->findByConsumerKey($data['oauth_consumer_key']);
+		if (empty($result)) {
 			return $this->Provider->reason = 'Invalid consumer key.';
+		}
+		$this->Consumer->data = $result['Consumer'];
+		foreach ($result['Consumer'] as $k => $v) {
+			$this->Consumer->$k = $v;
 		}
 
 		if ($this->Consumer->protect) {
 			if (empty($data['tool_consumer_instance_guid'])) {
 				return $this->Provider->reason = 'A tool consumer GUID must be included in the launch request.';
 			}
-			if (empty($this->Consumer->consumer_guid) or !($this->Consumer->consumer_guid == $data['tool_consumer_instance_guid'])) {
-				return $this->Provider->reason = 'Request is from an invalid tool consumer.';
+			if (empty($this->Consumer->consumer_guid) or ($this->Consumer->consumer_guid != $data['tool_consumer_instance_guid'])) {
+				return $this->Provider->reason = 'Request is from an invalid tool consumer: ' . $this->Consumer->consumer_guid;
 			}
 		}
 
@@ -258,6 +263,7 @@ class ProvidersController extends LtiAppController {
 			$this->Provider->isOK = FALSE;
 			if (empty($this->Provider->reason)) {
 				if ($this->Provider->debugMode) {
+					echo "here";
 					$oconsumer = new OAuthConsumer($this->Consumer->consumer_key, $this->Consumer->secret);
 					$signature = $request->build_signature($method, $oconsumer, FALSE);
 					$this->Provider->reason = $e->getMessage();
@@ -299,28 +305,37 @@ class ProvidersController extends LtiAppController {
 
 		// first try loading the resource link for the specific context_id item
 		$this->loadModel('Lti.ResourceLink');
-		$this->ResourceLink->context_id = trim($data['resource_link_id']);
+		$this->ResourceLink->lti_resource_id = trim($data['resource_link_id']);
 		$conditions =  [
 				'consumer_key' => $this->Consumer->consumer_key,
-				'context_id' => $this->ResourceLink->context_id
+				'lti_resource_id' => $this->ResourceLink->lti_resource_id
 		];
 		$this->ResourceLink->data = $this->ResourceLink->find('first', ['conditions' => $conditions]);
 
 		// however if we can't find this, load for the content_item
 		if (empty($this->ResourceLink->data) and !empty($content_item_id)) {
-			$conditions['context_id'] = $this->ResourceLink->context_id = $content_item_id;
+			$conditions['lti_resource_id'] = $this->ResourceLink->lti_resource_id = $content_item_id;
 			$this->ResourceLink->data = $this->ResourceLink->find('first', ['conditions' => $conditions]);
 		}
+
 		if (empty($this->ResourceLink->data)) {
 			$this->ResourceLink->consumer_key = $conditions['consumer_key'];
-			$this->ResourceLink->context_id = $conditions['context_id'];
+			$this->ResourceLink->lti_resource_id = $conditions['lti_resource_id'];
+		}
+
+		if (!empty($data['resource_link_id'])) {
+			$this->ResourceLink->lti_resource_id = trim($data['resource_link_id']);
 		}
 
 		if (!empty($data['context_id'])) {
 			$this->ResourceLink->lti_context_id = trim($data['context_id']);
+		} else {
+			// if we didn't get a context, use the resource link id as the context
+			$this->ResourceLink->lti_context_id = trim($data['resource_link_id']);
 		}
+		$this->ResourceLink->data['lti_context_id'] = $this->ResourceLink->lti_context_id;
+		$this->ResourceLink->data['lti_resource_id'] = $this->ResourceLink->lti_resource_id;
 
-		$this->ResourceLink->lti_resource_id = trim($data['resource_link_id']);
 		$title = '';
 		if (!empty($data['context_title'])) {
 			$title = trim($data['context_title']);
@@ -332,9 +347,10 @@ class ProvidersController extends LtiAppController {
 			$title .= trim($data['resource_link_title']);
 		}
 		if (empty($title)) {
-			$title = "Course {$this->ResourceLink->context_id}";
+			$title = "Course Item {$this->ResourceLink->resource_link_id}";
 		}
-		$this->ResourceLink->title = $title;
+		$this->ResourceLink->data['title'] = $this->ResourceLink->title = $title;
+
 
 		// Save LTI parameters
 		foreach ($this->Provider->lti_settings_names as $name) {
@@ -346,12 +362,14 @@ class ProvidersController extends LtiAppController {
 		}
 
 		// Delete any existing custom parameters
-		foreach ($this->ResourceLink->getSettings() as $name => $value) {
-			if (strpos($name, 'custom_') === 0) {
-				$this->ResourceLink->setSetting($name);
+		$settings = $this->ResourceLink->getSettings();
+		if (!empty($settings)) {
+			foreach ($settings as $name => $value) {
+				if (strpos($name, 'custom_') === 0) {
+					$this->ResourceLink->setSetting($name);
+				}
 			}
 		}
-
 		// Save custom parameters
 		foreach ($data as $name => $value) {
 			if (strpos($name, 'custom_') === 0) {
@@ -367,7 +385,9 @@ class ProvidersController extends LtiAppController {
 		#
 		### Persist changes to resource link
 		#
-		$this->ResourceLink->save();
+
+		$this->ResourceLink->save($this->ResourceLink->data);
+
 	}
 
 	protected function _setUser() {
@@ -385,17 +405,18 @@ class ProvidersController extends LtiAppController {
 
 		$conditions = [
 			'consumer_key' => $this->Consumer->consumer_key,
-			'context_id' => $this->ResourceLink->context_id,
+			'context_id' => $this->ResourceLink->lti_context_id,
 			'user_id' => $user_id
 		];
 
-		$this->Consumer->LTIUser->data = $this->Consumer->LTIUser->find('first', ['conditions' => $conditions]);
-		if (empty($this->Consumer->LTIUser->data)) {
-			$this->Consumer->LTIUser->consumer_key = $conditions['consumer_key'];
-			$this->Consumer->LTIUser->context_id = $conditions['context_id'];
-			$this->Consumer->LTIUser->user_id = $conditions['user_id'];
+		$result = $this->Consumer->LTIUser->find('first', ['conditions' => $conditions]);
+		if (empty($result)) {
+			$this->Consumer->LTIUser->consumer_key = $this->Consumer->LTIUser->data['consumer_key'] = $conditions['consumer_key'];
+			$this->Consumer->LTIUser->context_id = $this->Consumer->LTIUser->data['context_id'] = $conditions['context_id'];
+			$this->Consumer->LTIUser->user_id = $this->Consumer->LTIUser->data['user_id'] = $conditions['user_id'];
 		} else {
-			$this->Consumer->LTIUser->id = $this->Consumer->LTIUser->data['LTIUser']['id'];
+			$this->Consumer->LTIUser->data = $result['LTIUser'];
+			$this->Consumer->LTIUser->id = $this->Consumer->LTIUser->data['id'];
 		}
 		#
 		### Set the user name
@@ -415,19 +436,23 @@ class ProvidersController extends LtiAppController {
 		### Set the user roles
 		#
 		if (isset($data['roles'])) {
-			$this->Consumer->LTIUser->roles = $this->Provider->parseRoles($data['roles']);
+			$this->Consumer->LTIUser->data['roles'] = $this->Consumer->LTIUser->roles = $this->Provider->parseRoles($data['roles']);
 		}
 
 		#
 		### Save the user instance, or delete it if we weren't passed an LIS source ID
 		#
 		if (isset($data['lis_result_sourcedid'])) {
-			if ($this->Consumer->LTIUser->lti_result_sourcedid != $data['lis_result_sourcedid']) {
-				$this->Consumer->LTIUser->lti_result_sourcedid = $data['lis_result_sourcedid'];
-				$this->Consumer->LTIUser->save();
+			if ($this->Consumer->LTIUser->data['lti_result_sourcedid'] != $data['lis_result_sourcedid']) {
+				$this->Consumer->LTIUser->data['lti_result_sourcedid'] = $data['lis_result_sourcedid'];
+
+				$this->Consumer->LTIUser->save($this->Consumer->LTIUser->data);
 				$this->Consumer->LTIUser->data = $this->Consumer->LTIUser->find('first', ['conditions' => $conditions]);
+				foreach ($this->Consumer->LTIUser->data as $k => $v) {
+					$this->Consumer->LTIUser->$k = $v;
+				}
 			}
-		} else if (!empty($this->Consumer->LTIUser->lti_result_sourcedid)) {
+		} else if (empty($this->Consumer->LTIUser->lti_result_sourcedid)) {
 			$this->Consumer->LTIUser->delete();
 		}
 
@@ -441,21 +466,21 @@ class ProvidersController extends LtiAppController {
 		$data = $this->request->data;
 		$now = time();
 		$today = date('Y-m-d', $now);
-		if (empty($this->Consumer->last_access)) {
+		if (empty($this->Consumer->data['last_access'])) {
 			$doSaveConsumer = TRUE;
 		} else {
-			$last = $this->Consumer->last_access;
+			$last = $this->Consumer->data['last_access'];
 			$doSaveConsumer = $doSaveConsumer || ($last != $today);
 		}
-		$this->Consumer->last_access = $today;
-		$this->Consumer->defaultEmail = $this->Provider->defaultEmail;
-		if ($this->Consumer->lti_version != $data['lti_version']) {
-			$this->Consumer->lti_version = $data['lti_version'];
+		$this->Consumer->data['last_access'] = $today;
+		$this->Consumer->data['defaultEmail'] = $this->Provider->defaultEmail;
+		if ($this->Consumer->data['lti_version'] != $data['lti_version']) {
+			$this->Consumer->data['lti_version'] = $data['lti_version'];
 			$doSaveConsumer = TRUE;
 		}
 		if (isset($data['tool_consumer_instance_name'])) {
-			if ($this->Consumer->consumer_name != $data['tool_consumer_instance_name']) {
-				$this->Consumer->consumer_name = $data['tool_consumer_instance_name'];
+			if ($this->Consumer->data['consumer_name'] != $data['tool_consumer_instance_name']) {
+				$this->Consumer->data['consumer_name'] = $data['tool_consumer_instance_name'];
 				$doSaveConsumer = TRUE;
 			}
 		}
@@ -466,38 +491,38 @@ class ProvidersController extends LtiAppController {
 			}
 
 			// do not delete any existing consumer version if none is passed
-			if ($this->Consumer->consumer_version != $version) {
-				$this->Consumer->consumer_version = $version;
+			if ($this->Consumer->data['consumer_version'] != $version) {
+				$this->Consumer->data['consumer_version'] = $version;
 				$doSaveConsumer = TRUE;
 			}
-		} else if (isset($data['ext_lms']) && ($this->Consumer->consumer_name != $data['ext_lms'])) {
-			$this->Consumer->consumer_version = $data['ext_lms'];
+		} else if (isset($data['ext_lms']) && ($this->Consumer->data['consumer_name'] != $data['ext_lms'])) {
+			$this->Consumer->data['consumer_version'] = $data['ext_lms'];
 			$doSaveConsumer = TRUE;
 		}
 
 		if (isset($data['tool_consumer_instance_guid'])) {
-			if (is_null($this->Consumer->consumer_guid)) {
-				$this->Consumer->consumer_guid = $data['tool_consumer_instance_guid'];
+			if (is_null($this->Consumer->data['consumer_guid'])) {
+				$this->Consumer->data['consumer_guid'] = $data['tool_consumer_instance_guid'];
 				$doSaveConsumer = TRUE;
-			} else if (!$this->Consumer->protect) {
-				$doSaveConsumer = ($this->Consumer->consumer_guid != $data['tool_consumer_instance_guid']);
+			} else if (!$this->Consumer->data['protect']) {
+				$doSaveConsumer = ($this->Consumer->data['consumer_guid'] != $data['tool_consumer_instance_guid']);
 				if ($doSaveConsumer) {
-					$this->Consumer->consumer_guid = $data['tool_consumer_instance_guid'];
+					$this->Consumer->data['consumer_guid'] = $data['tool_consumer_instance_guid'];
 				}
 			}
 		}
 
 		if (isset($data['launch_presentation_css_url'])) {
-			if ($this->Consumer->css_path != $data['launch_presentation_css_url']) {
-				$this->Consumer->css_path = $data['launch_presentation_css_url'];
+			if ($this->Consumer->data['css_path'] != $data['launch_presentation_css_url']) {
+				$this->Consumer->data['css_path'] = $data['launch_presentation_css_url'];
 				$doSaveConsumer = TRUE;
 			}
 		} else if (isset($data['ext_launch_presentation_css_url']) &&
-			 ($this->Consumer->css_path != $data['ext_launch_presentation_css_url'])) {
-			$this->Consumer->css_path = $data['ext_launch_presentation_css_url'];
+			 ($this->Consumer->data['css_path'] != $data['ext_launch_presentation_css_url'])) {
+			$this->Consumer->data['css_path'] = $data['ext_launch_presentation_css_url'];
 			$doSaveConsumer = TRUE;
-		} else if (!empty($this->Consumer->css_path)) {
-			$this->Consumer->css_path = NULL;
+		} else if (!empty($this->Consumer->data['css_path'])) {
+			$this->Consumer->data['css_path'] = NULL;
 			$doSaveConsumer = TRUE;
 		}
 
@@ -505,9 +530,12 @@ class ProvidersController extends LtiAppController {
 		### Persist changes to consumer
 		#
 		if ($doSaveConsumer) {
-			$this->Consumer->save();
-		}
+			foreach ($this->Consumer->data as $k => $v) {
+				$this->Consumer->$k = $v;
+			}
+			$this->Consumer->save($this->Consumer->data);
 
+		}
 	}
 
 /**

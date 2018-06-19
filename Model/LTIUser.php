@@ -93,6 +93,9 @@ class LTIUser extends LtiAppModel {
 		if (empty($this->fullname)) {
 			$this->fullname = "{$this->firstname} {$this->lastname}";
 		}
+		$this->data['firstname'] = $this->firstname;
+		$this->data['lastname'] = $this->lastname;
+		$this->data['fullname'] = $this->fullname;
 
 	}
 
@@ -114,7 +117,7 @@ class LTIUser extends LtiAppModel {
 		} else {
 			$this->email = '';
 		}
-
+		$this->data['email'] = $this->email;
 	}
 
 /**

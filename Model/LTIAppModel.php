@@ -30,16 +30,16 @@ class LtiAppModel extends AppModel
 		return $results;
 	}
 
-	public function beforeSave($options = []) {
+	// public function beforeSave($options = []) {
 
-		if (empty($this->_schema)) {
-			return true;
-		}
-		foreach ($this->_schema as $var => $extra) {
-			if(!empty($this->{$var})) {
-				$this->data[$this->alias][$var] = $this->{$var};
-			}
-		}
-		return parent::beforeSave($options);
-	}
+	// 	if (empty($this->_schema)) {
+	// 		return true;
+	// 	}
+	// 	foreach ($this->_schema as $var => $extra) {
+	// 		if(!empty($this->{$var})) {
+	// 			$this->data[$this->alias][$var] = $this->{$var};
+	// 		}
+	// 	}
+	// 	return parent::beforeSave($options);
+	// }
 }

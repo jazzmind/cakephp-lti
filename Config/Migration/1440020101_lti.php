@@ -17,7 +17,8 @@ class Lti extends CakeMigration {
 		'up' => [
 			'create_table' => [
 				'lti_consumers' => [
-					'consumer_key' => ['type' => 'string', 'null' => false, 'length' => 255],
+					'id' => ['type' => 'integer', 'null' => false, 'key' => 'primary'],
+					'consumer_key' => ['type' => 'string', 'null' => false, 'default' => "md5(to_char(now(), 'HH12X@XMIZ#WSS'::text))", 'length' => 255],
 					'name' => ['type' => 'string', 'null' => false, 'length' => 45],
 					'secret' => ['type' => 'string', 'null' => false, 'length' => 32],
 					'lti_version' => ['type' => 'string', 'null' => true, 'length' => 12],
@@ -30,10 +31,10 @@ class Lti extends CakeMigration {
 					'enable_from' => ['type' => 'datetime', 'null' => true],
 					'enable_until' => ['type' => 'datetime', 'null' => true],
 					'last_access' => ['type' => 'date', 'null' => true],
-					'created' => ['type' => 'datetime', 'null' => false],
-					'modified' => ['type' => 'datetime', 'null' => false],
+					'created' => ['type' => 'datetime', 'null' => false, 'default' => 'now()'],
+					'modified' => ['type' => 'datetime', 'null' => false, 'default' => 'now()'],
 					'indexes' => [
-						'PRIMARY' => ['unique' => true, 'column' => 'consumer_key'],
+						'PRIMARY' => ['unique' => true, 'column' => 'id'],
 					],
 					'tableParameters' => [],
 				],
@@ -48,8 +49,8 @@ class Lti extends CakeMigration {
 					'primary_context_id' => ['type' => 'string', 'null' => true, 'length' => 255],
 					'share_approved' => ['type' => 'boolean', 'null' => true],
 					'settings' => ['type' => 'text', 'null' => true, 'length' => 1073741824],
-					'created' => ['type' => 'datetime', 'null' => false],
-					'modified' => ['type' => 'datetime', 'null' => false],
+					'created' => ['type' => 'datetime', 'null' => false, 'default' => 'now()'],
+					'modified' => ['type' => 'datetime', 'null' => false, 'default' => 'now()'],
 					'indexes' => [
 						'PRIMARY' => ['unique' => true, 'column' => 'id'],
 						'context_unique' => ['unique' => true, 'column' => ['consumer_key', 'context_id']],
@@ -62,8 +63,8 @@ class Lti extends CakeMigration {
 					'context_id' => ['type' => 'string', 'null' => false, 'length' => 255],
 					'user_id' => ['type' => 'string', 'null' => false, 'length' => 255],
 					'lti_result_sourcedid' => ['type' => 'string', 'null' => false, 'length' => 255],
-					'created' => ['type' => 'datetime', 'null' => false],
-					'modified' => ['type' => 'datetime', 'null' => false],
+					'created' => ['type' => 'datetime', 'null' => false, 'default' => 'now()'],
+					'modified' => ['type' => 'datetime', 'null' => false, 'default' => 'now()'],
 					'indexes' => [
 						'PRIMARY' => ['unique' => true, 'column' => 'id'],
 						'user_unique' => ['unique' => true, 'column' => ['consumer_key', 'context_id', 'user_id']],

@@ -33,6 +33,7 @@
 	}
 	echo $this->Form->input('key', ['type' => 'text', 'label' => 'OAuth Key']);
 	echo $this->Form->input('secret', ['type' => 'text', 'label' => 'OAuth Secret']);
+	//echo $this->Form->input('custom_debug', ['type' => 'select', 'label' => 'Debug Mode', 'options' => [0 => 'No', 1 => 'Yes']]);
 	echo("</fieldset><p>");
 	echo("<fieldset><legend>Launch Data</legend>\n");
 	foreach ($lmsdata as $k => $val ) {

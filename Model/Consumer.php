@@ -5,8 +5,8 @@ App::uses('Provider', 'Lti.Model');
 class Consumer extends LtiAppModel {
 
 	public $actsAs = ['Containable'];
-	public $primaryKey = 'consumer_key';
-	public $displayName = 'name';
+  public $displayName = 'name';
+  public $primaryKey = 'consumer_key';
 
 	public $hasMany = [
 		'Nonces' => [
@@ -102,23 +102,23 @@ class Consumer extends LtiAppModel {
 	public $consumer_key = NULL;
 
 
-	protected $_schema = [
-					'consumer_key' => ['type' => 'string', 'null' => false, 'length' => 255],
-					'name' => ['type' => 'string', 'null' => false, 'length' => 45],
-					'secret' => ['type' => 'string', 'null' => false, 'length' => 32],
-					'lti_version' => ['type' => 'string', 'null' => true, 'length' => 12],
-					'consumer_name' => ['type' => 'string', 'null' => true, 'length' => 255],
-					'consumer_version' => ['type' => 'string', 'null' => true, 'length' => 255],
-					'consumer_guid' => ['type' => 'string', 'null' => true, 'length' => 255],
-					'css_path' => ['type' => 'string', 'null' => true, 'length' => 255],
-					'protect' => ['type' => 'boolean', 'null' => false, 'default' => true ],
-					'enabled' => ['type' => 'boolean', 'null' => false, 'default' => false ],
-					'enable_from' => ['type' => 'datetime', 'null' => true],
-					'enable_until' => ['type' => 'datetime', 'null' => true],
-					'last_access' => ['type' => 'date', 'null' => true],
-					'created' => ['type' => 'datetime', 'null' => false],
-					'modified' => ['type' => 'datetime', 'null' => false],
-	];
+	// protected $_schema = [
+	// 				'consumer_key' => ['type' => 'string', 'null' => false, 'length' => 255],
+	// 				'name' => ['type' => 'string', 'null' => false, 'length' => 45],
+	// 				'secret' => ['type' => 'string', 'null' => false, 'length' => 32],
+	// 				'lti_version' => ['type' => 'string', 'null' => true, 'length' => 12],
+	// 				'consumer_name' => ['type' => 'string', 'null' => true, 'length' => 255],
+	// 				'consumer_version' => ['type' => 'string', 'null' => true, 'length' => 255],
+	// 				'consumer_guid' => ['type' => 'string', 'null' => true, 'length' => 255],
+	// 				'css_path' => ['type' => 'string', 'null' => true, 'length' => 255],
+	// 				'protect' => ['type' => 'boolean', 'null' => false, 'default' => true ],
+	// 				'enabled' => ['type' => 'boolean', 'null' => false, 'default' => false ],
+	// 				'enable_from' => ['type' => 'datetime', 'null' => true],
+	// 				'enable_until' => ['type' => 'datetime', 'null' => true],
+	// 				'last_access' => ['type' => 'date', 'null' => true],
+	// 				'created' => ['type' => 'datetime', 'null' => false],
+	// 				'modified' => ['type' => 'datetime', 'null' => false],
+	// ];
 /**
  * Class constructor.
  *

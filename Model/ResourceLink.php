@@ -4,8 +4,8 @@ App::uses('LtiAppModel', 'Lti.Model');
 class ResourceLink extends LtiAppModel {
 
 	public $actsAs = ['Containable'];
-	public $useTable = 'contexts';
-	public $primaryKey = 'id';
+	public $useTable = 'resource_links';
+	public $primaryKey = 'lti_resource_id';
 	public $displayName = 'title';
 
 	public $belongsTo = [
@@ -213,11 +213,11 @@ class ResourceLink extends LtiAppModel {
 		$old_value = $this->getSetting($name);
 		if ($value != $old_value) {
 			if (!empty($value)) {
-				$this->settings[$name] = $value;
+				$this->data['settings'][$name] = $this->settings[$name] = $value;
 			} else {
-				unset($this->settings[$name]);
+				unset($this->settings[$name], $this->data['settings'][$name]);
 			}
-			$this->settings_changed = TRUE;
+			$this->data['settings_changed'] = $this->settings_changed = TRUE;
 		}
 
 	}

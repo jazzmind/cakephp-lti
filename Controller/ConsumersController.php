@@ -5,6 +5,7 @@ App::import('Vendor', 'Lti.OAuth', ['file' => 'OAuth.php']);
 class ConsumersController extends LtiAppController {
 	public $components = [];
 	public $scaffold = 'admin';
+	public $displayField = 'name';
 /**
  * Security
  *

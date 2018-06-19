@@ -442,19 +442,27 @@ class ProvidersController extends LtiAppController {
 		#
 		### Save the user instance, or delete it if we weren't passed an LIS source ID
 		#
-		if (isset($data['lis_result_sourcedid'])) {
-			if ($this->Consumer->LTIUser->data['lti_result_sourcedid'] != $data['lis_result_sourcedid']) {
-				$this->Consumer->LTIUser->data['lti_result_sourcedid'] = $data['lis_result_sourcedid'];
-
-				$this->Consumer->LTIUser->save($this->Consumer->LTIUser->data);
-				$this->Consumer->LTIUser->data = $this->Consumer->LTIUser->find('first', ['conditions' => $conditions]);
-				foreach ($this->Consumer->LTIUser->data as $k => $v) {
-					$this->Consumer->LTIUser->$k = $v;
-				}
+		//pr($data);exit;
+		if (!empty($data['lis_result_sourcedid'])) {
+			if (empty($this->Consumer->LTIUser->data['lis_result_sourcedid']) || $this->Consumer->LTIUser->data['lis_result_sourcedid'] != $data['lis_result_sourcedid']) {
+				$this->Consumer->LTIUser->data['lis_result_sourcedid'] = $data['lis_result_sourcedid'];
 			}
-		} else if (empty($this->Consumer->LTIUser->lti_result_sourcedid)) {
-			$this->Consumer->LTIUser->delete();
 		}
+		if (!empty($data['lis_person_sourcedid'])) {
+			if (empty($this->Consumer->LTIUser->data['lis_person_sourcedid']) || $this->Consumer->LTIUser->data['lis_person_sourcedid'] != $data['lis_person_sourcedid']) {
+				$this->Consumer->LTIUser->data['lis_person_sourcedid'] = $data['lis_person_sourcedid'];
+			}
+		}
+		$this->Consumer->LTIUser->save($this->Consumer->LTIUser->data);
+		$this->Consumer->LTIUser->data = $this->Consumer->LTIUser->find('first', ['conditions' => $conditions]);
+		foreach ($this->Consumer->LTIUser->data as $k => $v) {
+			$this->Consumer->LTIUser->$k = $v;
+		}
+
+		// not sure why we want to delete if we didn't get the sourceid - we still have an entry
+		// if (empty($this->Consumer->LTIUser->lis_result_sourcedid)) {
+		// 	$this->Consumer->LTIUser->delete();
+		// }
 
 	}
 

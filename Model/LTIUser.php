@@ -50,7 +50,7 @@ class LTIUser extends LtiAppModel {
 /**
  * @var string User's result sourcedid.
  */
-	public $lti_result_sourcedid = NULL;
+	public $lis_result_sourcedid = NULL;
 /**
  * @var object Date/time the record was created.
  */
@@ -186,7 +186,7 @@ class LTIUser extends LtiAppModel {
 // 		$key = $user->getResourceLink()->getKey();
 // 		$id = $user->getResourceLink()->getId();
 // 		$userId = $user->getId(LTI_Tool_Provider::ID_SCOPE_ID_ONLY);
-// 		$sql = 'SELECT lti_result_sourcedid, created, modified ' .
+// 		$sql = 'SELECT lis_result_sourcedid, created, modified ' .
 // 					 'FROM ' . $this->dbTableNamePrefix . LTI_Data_Connector::USER_TABLE_NAME . ' ' .
 // 					 'WHERE (consumer_key = :key) AND (context_id = :id) AND (user_id = :user_id)';
 // 		$query = $this->db->prepare($sql);
@@ -201,7 +201,7 @@ class LTIUser extends LtiAppModel {
 
 // 		if ($ok) {
 // 			$row = array_change_key_case($row);
-// 			$user->lti_result_sourcedid = $row['lti_result_sourcedid'];
+// 			$user->lis_result_sourcedid = $row['lis_result_sourcedid'];
 // 			$user->created = strtotime($row['created']);
 // 			$user->modified = strtotime($row['modified']);
 // 		}
@@ -222,18 +222,18 @@ class LTIUser extends LtiAppModel {
 // 		$userId = $user->getId(LTI_Tool_Provider::ID_SCOPE_ID_ONLY);
 // 		if (is_null($user->created)) {
 // 			$sql = 'INSERT INTO ' . $this->dbTableNamePrefix . LTI_Data_Connector::USER_TABLE_NAME . ' (consumer_key, context_id, ' .
-// 						 'user_id, lti_result_sourcedid, created, modified) ' .
-// 						 'VALUES (:key, :id, :user_id, :lti_result_sourcedid, :now, :now)';
+// 						 'user_id, lis_result_sourcedid, created, modified) ' .
+// 						 'VALUES (:key, :id, :user_id, :lis_result_sourcedid, :now, :now)';
 // 		} else {
 // 			$sql = 'UPDATE ' . $this->dbTableNamePrefix . LTI_Data_Connector::USER_TABLE_NAME . ' ' .
-// 						 'SET lti_result_sourcedid = :lti_result_sourcedid, modified = :now ' .
+// 						 'SET lis_result_sourcedid = :lis_result_sourcedid, modified = :now ' .
 // 						 'WHERE (consumer_key = :key) AND (context_id = :id) AND (user_id = :user_id)';
 // 		}
 // 		$query = $this->db->prepare($sql);
 // 		$query->bindValue('key', $key, PDO::PARAM_STR);
 // 		$query->bindValue('id', $id, PDO::PARAM_STR);
 // 		$query->bindValue('user_id', $userId, PDO::PARAM_STR);
-// 		$query->bindValue('lti_result_sourcedid', $user->lti_result_sourcedid, PDO::PARAM_STR);
+// 		$query->bindValue('lis_result_sourcedid', $user->lis_result_sourcedid, PDO::PARAM_STR);
 // 		$query->bindValue('now', $now, PDO::PARAM_STR);
 // 		$ok = $query->execute();
 // 		if ($ok) {

@@ -78,7 +78,8 @@ class OAuthStore extends LtiAppModel {
 		$this->Nonce->deleteAll(['expires < now()']);
 		$nonce = $this->Nonce->find('first', [
 			'conditions' => [
-				'consumer_key' => $consumer->key
+				'consumer_key' => $consumer->key,
+				'value' => $value
 			]
 		]);
 		if (empty($nonce)) {

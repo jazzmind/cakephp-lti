@@ -15,9 +15,12 @@ class Lti2 extends CakeMigration {
  */
 	public $migration = [
 		'up' => [
-			'alter_table' => [
-				'lti_contexts' => [
-					'rename' => ['lti_resource_links']
+			'rename_table' => [
+				'lti_contexts' => 'lti_resource_links'
+			],
+			'create_field' => [
+				'lti_users' => [
+					'lis_person_sourcedid' => ['type' => 'string', 'null' => false, 'length' => 255],
 				],
 			],
 
@@ -26,13 +29,32 @@ class Lti2 extends CakeMigration {
 					'context_id',
 				],
 			],
-		],
-		'down' => [
-			'alter_table' => [
-				'lti_resource_links' => [
-					'rename' => ['lti_contexts']
+			'rename_field' => [
+				'lti_users' => [
+					'lti_result_sourcedid' => 'lis_result_sourcedid'
 				],
 			],
+		],
+		'down' => [
+			'rename_table' => [
+				'lti_resource_links' => 'lti_contexts'
+			],
+			'drop_field' => [
+				'lti_users' => [
+					'lis_person_sourcedid',
+				],
+			],
+
+			'create_field' => [
+				'lti_resource_links' => [
+					'context_id' => ['type' => 'string', 'null' => false, 'length' => 255],
+				],
+			],
+			'rename_field' => [
+				'lti_users' => [
+					'lis_result_sourcedid' => 'lti_result_sourcedid'
+				],
+			],			
 		],
 	];
 

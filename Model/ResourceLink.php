@@ -447,13 +447,13 @@ class ResourceLink extends LtiAppModel {
 // 		$users = array();
 
 // 		if ($local_only) {
-// 			$sql = 'SELECT u.consumer_key, u.context_id, u.user_id, u.lti_result_sourcedid ' .
+// 			$sql = 'SELECT u.consumer_key, u.context_id, u.user_id, u.lis_result_sourcedid ' .
 // 						 'FROM ' . $this->dbTableNamePrefix . LTI_Data_Connector::USER_TABLE_NAME . ' u ' .
 // 						 'INNER JOIN ' . $this->dbTableNamePrefix . LTI_Data_Connector::RESOURCE_LINK_TABLE_NAME . ' c ' .
 // 						 'ON u.consumer_key = c.consumer_key AND u.context_id = c.context_id ' .
 // 						 'WHERE (c.consumer_key = :key) AND (c.context_id = :id) AND (c.primary_consumer_key IS NULL) AND (c.primary_context_id IS NULL)';
 // 		} else {
-// 			$sql = 'SELECT u.consumer_key, u.context_id, u.user_id, u.lti_result_sourcedid ' .
+// 			$sql = 'SELECT u.consumer_key, u.context_id, u.user_id, u.lis_result_sourcedid ' .
 // 						 'FROM ' . $this->dbTableNamePrefix . LTI_Data_Connector::USER_TABLE_NAME . ' u ' .
 // 						 'INNER JOIN ' . $this->dbTableNamePrefix . LTI_Data_Connector::RESOURCE_LINK_TABLE_NAME . ' c ' .
 // 						 'ON u.consumer_key = c.consumer_key AND u.context_id = c.context_id ' .
@@ -471,7 +471,7 @@ class ResourceLink extends LtiAppModel {
 // 				$user = new LTI_User($resource_link, $row['user_id']);
 // 				$user->consumer_key = $row['consumer_key'];
 // 				$user->context_id = $row['context_id'];
-// 				$user->lti_result_sourcedid = $row['lti_result_sourcedid'];
+// 				$user->lis_result_sourcedid = $row['lis_result_sourcedid'];
 // 				if (is_null($id_scope)) {
 // 					$users[] = $user;
 // 				} else {

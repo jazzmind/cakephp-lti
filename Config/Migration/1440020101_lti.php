@@ -18,7 +18,7 @@ class Lti extends CakeMigration {
 			'create_table' => [
 				'lti_consumers' => [
 					'id' => ['type' => 'integer', 'null' => false, 'key' => 'primary'],
-					'consumer_key' => ['type' => 'string', 'null' => false, 'default' => "md5(to_char(now(), 'HH12X@XMIZ#WSS'::text))", 'length' => 255],
+					'consumer_key' => ['type' => 'string', 'null' => false, 'length' => 36],
 					'name' => ['type' => 'string', 'null' => false, 'length' => 45],
 					'secret' => ['type' => 'string', 'null' => false, 'length' => 32],
 					'lti_version' => ['type' => 'string', 'null' => true, 'length' => 12],

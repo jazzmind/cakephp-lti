@@ -3,7 +3,7 @@ App::uses('LtiAppController', 'Lti.Controller');
 App::import('Vendor', 'Lti.OAuth', ['file' => 'OAuth.php']);
 
 class ConsumersController extends LtiAppController {
-	public $components = [];
+	public $components = ['DataTable'];
 	public $scaffold = 'admin';
 	public $displayField = 'name';
 /**
@@ -16,7 +16,7 @@ class ConsumersController extends LtiAppController {
  			'launch', 'response'
   		],
  		'admin' => [
- 			'admin_index', 'admin_add', 'admin_edit', 'admin_delete',
+ 			'admin_index', 'admin_view', 'admin_add', 'admin_edit', 'admin_delete',
  		],
  		'ajax-only' => [
  		]
@@ -299,5 +299,27 @@ class ConsumersController extends LtiAppController {
 		return $ok;
 
 	}
+
+
+
+
+	public function admin_index() {
+		$this->helpers[] = 'DataTable';
+		if ($this->request->is('ajax')) {
+			$this->DataTable->emptyElements = 1;
+
+			$this->Paginator->settings = [
+				'contain' => [],
+				'fields' => ['Consumer.id', 'Consumer.name', 'Consumer.consumer_key', 'Consumer.consumer_guid'],
+				'order' => [ 'Consumer.name' => 'asc' ]
+			];
+			$consumers = $this->DataTable->getResponse();
+			$this->set('consumers', $consumers);
+			$this->set('_serialize','consumers');
+		}
+
+	}
+
+
 
 }

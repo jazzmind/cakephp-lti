@@ -24,8 +24,8 @@ class Consumer extends LtiAppModel {
 			'dependent' => true,
 			'foreignKey' => 'primary_consumer_key'
 		],
-		'LTIUser' => [
-			'className' => 'Lti.LTIUser',
+		'LtiUser' => [
+			'className' => 'Lti.LtiUser',
 			'dependent' => true,
 			'foreignKey' => 'consumer_key'
 		]

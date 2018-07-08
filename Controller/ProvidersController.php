@@ -409,14 +409,14 @@ class ProvidersController extends LtiAppController {
 			'user_id' => $user_id
 		];
 
-		$result = $this->Consumer->LTIUser->find('first', ['conditions' => $conditions]);
+		$result = $this->Consumer->LtiUser->find('first', ['conditions' => $conditions]);
 		if (empty($result)) {
-			$this->Consumer->LTIUser->consumer_key = $this->Consumer->LTIUser->data['consumer_key'] = $conditions['consumer_key'];
-			$this->Consumer->LTIUser->context_id = $this->Consumer->LTIUser->data['context_id'] = $conditions['context_id'];
-			$this->Consumer->LTIUser->user_id = $this->Consumer->LTIUser->data['user_id'] = $conditions['user_id'];
+			$this->Consumer->LtiUser->consumer_key = $this->Consumer->LtiUser->data['consumer_key'] = $conditions['consumer_key'];
+			$this->Consumer->LtiUser->context_id = $this->Consumer->LtiUser->data['context_id'] = $conditions['context_id'];
+			$this->Consumer->LtiUser->user_id = $this->Consumer->LtiUser->data['user_id'] = $conditions['user_id'];
 		} else {
-			$this->Consumer->LTIUser->data = $result['LTIUser'];
-			$this->Consumer->LTIUser->id = $this->Consumer->LTIUser->data['id'];
+			$this->Consumer->LtiUser->data = $result['LtiUser'];
+			$this->Consumer->LtiUser->id = $this->Consumer->LtiUser->data['id'];
 		}
 		#
 		### Set the user name
@@ -424,19 +424,19 @@ class ProvidersController extends LtiAppController {
 		$firstname = (isset($data['lis_person_name_given'])) ? $data['lis_person_name_given'] : '';
 		$lastname = (isset($data['lis_person_name_family'])) ? $data['lis_person_name_family'] : '';
 		$fullname = (isset($data['lis_person_name_full'])) ? $data['lis_person_name_full'] : '';
-		$this->Consumer->LTIUser->setNames($firstname, $lastname, $fullname);
+		$this->Consumer->LtiUser->setNames($firstname, $lastname, $fullname);
 
 		#
 		### Set the user email
 		#
 		$email = (isset($data['lis_person_contact_email_primary'])) ? $data['lis_person_contact_email_primary'] : '';
-		$this->Consumer->LTIUser->setEmail($email, $this->defaultEmail);
+		$this->Consumer->LtiUser->setEmail($email, $this->defaultEmail);
 
 		#
 		### Set the user roles
 		#
 		if (isset($data['roles'])) {
-			$this->Consumer->LTIUser->data['roles'] = $this->Consumer->LTIUser->roles = $this->Provider->parseRoles($data['roles']);
+			$this->Consumer->LtiUser->data['roles'] = $this->Consumer->LtiUser->roles = $this->Provider->parseRoles($data['roles']);
 		}
 
 		#
@@ -444,24 +444,24 @@ class ProvidersController extends LtiAppController {
 		#
 		//pr($data);exit;
 		if (!empty($data['lis_result_sourcedid'])) {
-			if (empty($this->Consumer->LTIUser->data['lis_result_sourcedid']) || $this->Consumer->LTIUser->data['lis_result_sourcedid'] != $data['lis_result_sourcedid']) {
-				$this->Consumer->LTIUser->data['lis_result_sourcedid'] = $data['lis_result_sourcedid'];
+			if (empty($this->Consumer->LtiUser->data['lis_result_sourcedid']) || $this->Consumer->LtiUser->data['lis_result_sourcedid'] != $data['lis_result_sourcedid']) {
+				$this->Consumer->LtiUser->data['lis_result_sourcedid'] = $data['lis_result_sourcedid'];
 			}
 		}
 		if (!empty($data['lis_person_sourcedid'])) {
-			if (empty($this->Consumer->LTIUser->data['lis_person_sourcedid']) || $this->Consumer->LTIUser->data['lis_person_sourcedid'] != $data['lis_person_sourcedid']) {
-				$this->Consumer->LTIUser->data['lis_person_sourcedid'] = $data['lis_person_sourcedid'];
+			if (empty($this->Consumer->LtiUser->data['lis_person_sourcedid']) || $this->Consumer->LtiUser->data['lis_person_sourcedid'] != $data['lis_person_sourcedid']) {
+				$this->Consumer->LtiUser->data['lis_person_sourcedid'] = $data['lis_person_sourcedid'];
 			}
 		}
-		$this->Consumer->LTIUser->save($this->Consumer->LTIUser->data);
-		$this->Consumer->LTIUser->data = $this->Consumer->LTIUser->find('first', ['conditions' => $conditions]);
-		foreach ($this->Consumer->LTIUser->data as $k => $v) {
-			$this->Consumer->LTIUser->$k = $v;
+		$this->Consumer->LtiUser->save($this->Consumer->LtiUser->data);
+		$this->Consumer->LtiUser->data = $this->Consumer->LtiUser->find('first', ['conditions' => $conditions]);
+		foreach ($this->Consumer->LtiUser->data as $k => $v) {
+			$this->Consumer->LtiUser->$k = $v;
 		}
 
 		// not sure why we want to delete if we didn't get the sourceid - we still have an entry
-		// if (empty($this->Consumer->LTIUser->lis_result_sourcedid)) {
-		// 	$this->Consumer->LTIUser->delete();
+		// if (empty($this->Consumer->LtiUser->lis_result_sourcedid)) {
+		// 	$this->Consumer->LtiUser->delete();
 		// }
 
 	}
@@ -700,10 +700,10 @@ class ProvidersController extends LtiAppController {
 					$ok = $this->ResourceLink->save();
 					if ($ok) {
 						$doSaveResourceLink = FALSE;
-						$this->LTIUser->getResourceLink()->primary_consumer_key = $key;
-						$this->LTIUser->getResourceLink()->primary_resource_link_id = $id;
-						$this->LTIUser->getResourceLink()->share_approved = $share_key->auto_approve;
-						$this->LTIUser->getResourceLink()->modified = time();
+						$this->LtiUser->getResourceLink()->primary_consumer_key = $key;
+						$this->LtiUser->getResourceLink()->primary_resource_link_id = $id;
+						$this->LtiUser->getResourceLink()->share_approved = $share_key->auto_approve;
+						$this->LtiUser->getResourceLink()->modified = time();
 // Remove share key
 						$this->ShareKey->delete();
 					} else {
@@ -718,7 +718,7 @@ class ProvidersController extends LtiAppController {
 				if (!$ok) {
 					$this->Provider->reason = 'You have requested to share a resource link but none is available.';
 				} else {
-					$ok = (!is_null($this->LTIUser->getResourceLink()->share_approved) && $this->LTIUser->getResourceLink()->share_approved);
+					$ok = (!is_null($this->LtiUser->getResourceLink()->share_approved) && $this->LtiUser->getResourceLink()->share_approved);
 					if (!$ok) {
 						$this->Provider->reason = 'Your share request is waiting to be approved.';
 					}

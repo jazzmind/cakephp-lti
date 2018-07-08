@@ -319,7 +319,7 @@ class ProvidersController extends LtiAppController {
 		}
 
 		if (empty($this->ResourceLink->data)) {
-			$this->ResourceLink->consumer_key = $conditions['consumer_key'];
+			$this->ResourceLink->consumer_key = $this->ResourceLink->data['consumer_key'] = $conditions['consumer_key'];
 			$this->ResourceLink->lti_resource_id = $conditions['lti_resource_id'];
 		}
 

@@ -301,8 +301,6 @@ class ConsumersController extends LtiAppController {
 	}
 
 
-
-
 	public function admin_index() {
 		$this->helpers[] = 'DataTable';
 		if ($this->request->is('ajax')) {
@@ -320,6 +318,32 @@ class ConsumersController extends LtiAppController {
 
 	}
 
+	public function admin_add() {
+		$user = $this->Auth->user();
+		$name = $user['Program']['name'];
+		$secret = strtoupper(substr(sha1(strtotime("now") . uniqid()), 1, 4) . '-' . substr(sha1(strtotime("now") . uniqid()), 1, 4). '-' . substr(sha1(strtotime("now") . uniqid()), 1, 4));   
+		$data = [
+			'name' => $name,
+			'secret' => $secret,
+			'lti_version' => 'LTI-1p0',
+			'consumer_name' => $name,
+			'consumer_guid' => strtr(strtolower(ClassRegistry::init('Inflector')->slug($name)), '_','-'),
+			'consumer_version' => 1,
+			'protect' => true,
+			'enabled' => true,
+		];
+		$this->Consumer->create();
+		$this->Consumer->save($data);
+		$id = $this->Consumer->id;
+		$this->redirect('/admin/lti/consumers/edit/' . $id);
+	}
 
-
+	public function admin_delete($consumer_key) {
+		if (!$this->Consumer->deleteAll(['consumer_key' => $consumer_key])) {
+			$this->alert('Could not delete - delete failed', 'bad');
+		} else {
+			$this->alert('Consumer deleted', 'good');
+		}
+		return $this->redirect($this->referer());
+	}
 }

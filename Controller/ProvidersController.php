@@ -257,13 +257,12 @@ class ProvidersController extends LtiAppController {
 			$server = new OAuthServer($this->OAuthStore);
 			$method = new OAuthSignatureMethod_HMAC_SHA1();
 			$server->add_signature_method($method);
-			$request = OAuthRequest::from_request();
+			$request = OAuthRequest::from_request($this->request->method(), Router::url(null, true));
 			$res = $server->verify_request($request);
 		} catch (Exception $e) {
 			$this->Provider->isOK = FALSE;
 			if (empty($this->Provider->reason)) {
 				if ($this->Provider->debugMode) {
-					echo "here";
 					$oconsumer = new OAuthConsumer($this->Consumer->consumer_key, $this->Consumer->secret);
 					$signature = $request->build_signature($method, $oconsumer, FALSE);
 					$this->Provider->reason = $e->getMessage();
@@ -408,15 +407,15 @@ class ProvidersController extends LtiAppController {
 			'context_id' => $this->ResourceLink->lti_context_id,
 			'user_id' => $user_id
 		];
-
-		$result = $this->Consumer->LtiUser->find('first', ['conditions' => $conditions]);
+		$this->loadModel('Lti.LtiUser');
+		$result = $this->LtiUser->find('first', ['conditions' => $conditions]);
 		if (empty($result)) {
-			$this->Consumer->LtiUser->consumer_key = $this->Consumer->LtiUser->data['consumer_key'] = $conditions['consumer_key'];
-			$this->Consumer->LtiUser->context_id = $this->Consumer->LtiUser->data['context_id'] = $conditions['context_id'];
-			$this->Consumer->LtiUser->user_id = $this->Consumer->LtiUser->data['user_id'] = $conditions['user_id'];
+			$this->LtiUser->consumer_key = $this->LtiUser->data['consumer_key'] = $conditions['consumer_key'];
+			$this->LtiUser->context_id = $this->LtiUser->data['context_id'] = $conditions['context_id'];
+			$this->LtiUser->user_id = $this->LtiUser->data['user_id'] = $conditions['user_id'];
 		} else {
-			$this->Consumer->LtiUser->data = $result['LtiUser'];
-			$this->Consumer->LtiUser->id = $this->Consumer->LtiUser->data['id'];
+			$this->LtiUser->data = $result['LtiUser'];
+			$this->LtiUser->id = $this->LtiUser->data['id'];
 		}
 		#
 		### Set the user name
@@ -424,19 +423,19 @@ class ProvidersController extends LtiAppController {
 		$firstname = (isset($data['lis_person_name_given'])) ? $data['lis_person_name_given'] : '';
 		$lastname = (isset($data['lis_person_name_family'])) ? $data['lis_person_name_family'] : '';
 		$fullname = (isset($data['lis_person_name_full'])) ? $data['lis_person_name_full'] : '';
-		$this->Consumer->LtiUser->setNames($firstname, $lastname, $fullname);
+		$this->LtiUser->setNames($firstname, $lastname, $fullname);
 
 		#
 		### Set the user email
 		#
 		$email = (isset($data['lis_person_contact_email_primary'])) ? $data['lis_person_contact_email_primary'] : '';
-		$this->Consumer->LtiUser->setEmail($email, $this->defaultEmail);
+		$this->LtiUser->setEmail($email, $this->defaultEmail);
 
 		#
 		### Set the user roles
 		#
 		if (isset($data['roles'])) {
-			$this->Consumer->LtiUser->data['roles'] = $this->Consumer->LtiUser->roles = $this->Provider->parseRoles($data['roles']);
+			$this->LtiUser->data['roles'] = $this->LtiUser->roles = $this->Provider->parseRoles($data['roles']);
 		}
 
 		#
@@ -444,24 +443,24 @@ class ProvidersController extends LtiAppController {
 		#
 		//pr($data);exit;
 		if (!empty($data['lis_result_sourcedid'])) {
-			if (empty($this->Consumer->LtiUser->data['lis_result_sourcedid']) || $this->Consumer->LtiUser->data['lis_result_sourcedid'] != $data['lis_result_sourcedid']) {
-				$this->Consumer->LtiUser->data['lis_result_sourcedid'] = $data['lis_result_sourcedid'];
+			if (empty($this->LtiUser->data['lis_result_sourcedid']) || $this->LtiUser->data['lis_result_sourcedid'] != $data['lis_result_sourcedid']) {
+				$this->LtiUser->data['lis_result_sourcedid'] = $data['lis_result_sourcedid'];
 			}
 		}
 		if (!empty($data['lis_person_sourcedid'])) {
-			if (empty($this->Consumer->LtiUser->data['lis_person_sourcedid']) || $this->Consumer->LtiUser->data['lis_person_sourcedid'] != $data['lis_person_sourcedid']) {
-				$this->Consumer->LtiUser->data['lis_person_sourcedid'] = $data['lis_person_sourcedid'];
+			if (empty($this->LtiUser->data['lis_person_sourcedid']) || $this->LtiUser->data['lis_person_sourcedid'] != $data['lis_person_sourcedid']) {
+				$this->LtiUser->data['lis_person_sourcedid'] = $data['lis_person_sourcedid'];
 			}
 		}
-		$this->Consumer->LtiUser->save($this->Consumer->LtiUser->data);
-		$this->Consumer->LtiUser->data = $this->Consumer->LtiUser->find('first', ['conditions' => $conditions]);
-		foreach ($this->Consumer->LtiUser->data as $k => $v) {
-			$this->Consumer->LtiUser->$k = $v;
+		$this->LtiUser->save($this->LtiUser->data);
+		$this->LtiUser->data = $this->LtiUser->find('first', ['conditions' => $conditions]);
+		foreach ($this->LtiUser->data as $k => $v) {
+			$this->LtiUser->$k = $v;
 		}
 
 		// not sure why we want to delete if we didn't get the sourceid - we still have an entry
-		// if (empty($this->Consumer->LtiUser->lis_result_sourcedid)) {
-		// 	$this->Consumer->LtiUser->delete();
+		// if (empty($this->LtiUser->lis_result_sourcedid)) {
+		// 	$this->LtiUser->delete();
 		// }
 
 	}

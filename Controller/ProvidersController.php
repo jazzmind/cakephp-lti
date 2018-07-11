@@ -447,11 +447,17 @@ class ProvidersController extends LtiAppController {
 				$this->LtiUser->data['lis_result_sourcedid'] = $data['lis_result_sourcedid'];
 			}
 		}
+		
 		if (!empty($data['lis_person_sourcedid'])) {
 			if (empty($this->LtiUser->data['lis_person_sourcedid']) || $this->LtiUser->data['lis_person_sourcedid'] != $data['lis_person_sourcedid']) {
 				$this->LtiUser->data['lis_person_sourcedid'] = $data['lis_person_sourcedid'];
 			}
 		}
+
+		if (!empty($this->LtiUser->data['lis_person_sourcedid'])) {
+			$this->LtiUser->data['lis_person_sourcedid'] = $data['lis_person_sourcedid'] = $email;
+		}
+
 		$this->LtiUser->save($this->LtiUser->data);
 		$this->LtiUser->data = $this->LtiUser->find('first', ['conditions' => $conditions]);
 		foreach ($this->LtiUser->data as $k => $v) {

@@ -13,17 +13,18 @@ class ConsumersController extends LtiAppController {
  */
  	public $actions = [
  		'all' => [
- 			'launch', 'response'
+			'response', 'outcome',
   		],
  		'admin' => [
- 			'admin_index', 'admin_view', 'admin_add', 'admin_edit', 'admin_delete',
+			'admin_launch', 
+			'admin_index', 'admin_view', 'admin_add', 'admin_edit', 'admin_delete',
  		],
  		'ajax-only' => [
  		]
 	];
 
 	public function beforeFilter() {
-		$this->Security->unlockedActions = ['admin_index', 'admin_add', 'admin_delete', 'admin_edit', 'launch', 'response'];
+		$this->Security->unlockedActions = ['admin_index', 'admin_add', 'admin_delete', 'admin_edit', 'admin_launch', 'response'];
 		parent::beforeFilter();
 	}
 
@@ -33,7 +34,7 @@ class ConsumersController extends LtiAppController {
 	}
 
 
-	public function launch() {
+	public function admin_launch() {
 		$launch_url = Router::url(['plugin' => 'lti', 'admin'=>false, 'controller' => 'providers', 'action' => 'request'], true);
 		$return_url = Router::url(['plugin' => 'lti', 'admin'=>false, 'controller' => 'consumers', 'action' => 'response'], true);
 		$outcome_url = Router::url(['plugin' => 'lti', 'admin'=>false, 'controller' => 'consumers', 'action' => 'outcome'], true);
@@ -152,6 +153,9 @@ class ConsumersController extends LtiAppController {
 		}
 	}
 
+	public function outcome() {
+		$this->layout = 'basic';
+	}
 	  // Parse a descriptor
 	protected function _launchInfo($xmldata) {
 	    $xml = new SimpleXMLElement($xmldata);

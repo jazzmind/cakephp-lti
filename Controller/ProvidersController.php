@@ -454,7 +454,7 @@ class ProvidersController extends LtiAppController {
 			}
 		}
 
-		if (!empty($this->LtiUser->data['lis_person_sourcedid'])) {
+		if (empty($this->LtiUser->data['lis_person_sourcedid'])) {
 			$this->LtiUser->data['lis_person_sourcedid'] = $data['lis_person_sourcedid'] = $email;
 		}
 

@@ -101,6 +101,11 @@ class Consumer extends LtiAppModel {
  */
 	public $consumer_key = NULL;
 
+/**
+ * @var string Timeline id that connects consumer to Practera instance.
+ */
+	public $timeline_id = NULL;
+
 
 	// protected $_schema = [
 	// 				'consumer_key' => ['type' => 'string', 'null' => false, 'length' => 255],

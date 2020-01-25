@@ -324,7 +324,7 @@ class ConsumersController extends LtiAppController {
 
 	public function admin_add() {
 		$user = $this->Auth->user();
-		$name = $user['Program']['name'];
+		$name = $user['Experience']['name'];
 		$secret = strtoupper(substr(sha1(strtotime("now") . uniqid()), 1, 4) . '-' . substr(sha1(strtotime("now") . uniqid()), 1, 4). '-' . substr(sha1(strtotime("now") . uniqid()), 1, 4));   
 		$data = [
 			'name' => $name,
@@ -335,11 +335,12 @@ class ConsumersController extends LtiAppController {
 			'consumer_version' => 1,
 			'protect' => true,
 			'enabled' => true,
+			'timeline_id' => $user['timeline_id']
 		];
 		$this->Consumer->create();
 		$this->Consumer->save($data);
 		$id = $this->Consumer->id;
-		$this->redirect('/admin/lti/consumers/edit/' . $id);
+		$this->redirect('/admin/lti/consumers/index');
 	}
 
 	public function admin_delete($consumer_key) {

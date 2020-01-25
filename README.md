@@ -30,7 +30,10 @@ When a launch request arrives, some parameters might allow the tool provider to 
 
 ## How it works in Practera
 
-When configuring a program in Practera, you can add one or more consumers to that program. This will let you put in a name for the Consumer (e.g. Moodle) and then it will give you a key and a secret for that consumer, along with instructions on how to add Practera as a Tool Provider into common LMS systems (e.g. Moodle, Blackboard, Canvas). When you go to that consumer and add a tool provider, you'll put in the key and the secret.
+When configuring an experience in Practera, you can add one or more consumers to that experience (note it gets associated with timeline_id, assuming a 1:1:1:1 relationship of exp->prog->proj->timeline). This will let you put in a name for the Consumer (e.g. Moodle) and then it will give you a key and a secret for that consumer, along with instructions on how to add Practera as a Tool Provider into common LMS systems (e.g. Moodle, Blackboard, Canvas). When you go to that consumer and add a tool provider, you'll put in the key and the secret.
+
+When a tool consumer launches into Practera, it does so via a "launch url". This is a signed get request that contains information about the user who clicked on the link and the context the link was in (course, unit, etc). Practera will save this link info so that it can be quickly referenced in the future (mostly for sending grade information back). It will then authenticate the user or create a new user if the user doesn't exist. Finally, depending on the launch parameters, it will respond with HTML, JSON, a URL to redirect or an error message.
+
 
 # Writing LTI Stuff
 

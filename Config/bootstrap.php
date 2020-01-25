@@ -5,10 +5,11 @@
 // launch => 'doLaunch'
 // Alternatively, you can specify a model and method in an array, and it will load the model and call the method,
 // passing the ProviderController object in as context
-Configure::write('LTI.callbackHandler', [
-	'launch' => ['model' => 'LtiResource', 'method' => 'lti_launch'],
-	'dashboard' => '',
-	'error' => '',
-	'configure' => '',
-	'content-item' => '',
-]);
+// Configure::write('Lti.callbackHandler', [
+// 	'launch' => '',
+// 	'authenticate' => '',
+// 	'dashboard' => '',
+// 	'error' => '',
+// 	'configure' => '',
+// 	'content-item' => '',
+// ]);

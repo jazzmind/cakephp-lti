@@ -143,7 +143,8 @@ class Provider extends LtiAppModel {
 		'basic-lti-launch-request' => 'launch',
 		'ConfigureLaunchRequest' => 'configure',
 		'DashboardRequest' => 'dashboard',
-		'ContentItemSelectionRequest' => 'content-item'
+		'ContentItemSelectionRequest' => 'content-item',
+		'APITokenRequest' => 'authenticate'
 	];
 /**
  *  @var array List of supported message types and associated class methods
@@ -152,7 +153,8 @@ class Provider extends LtiAppModel {
 		'basic-lti-launch-request' => 'onLaunch',
 		'ConfigureLaunchRequest' => 'onConfigure',
 		'DashboardRequest' => 'onDashboard',
-		'ContentItemSelectionRequest' => 'onContentItem'
+		'ContentItemSelectionRequest' => 'onContentItem',
+		'APITokenRequest' => 'onAuthenticate'
 	];
 /**
  *  @var array Names of LTI parameters to be retained in the settings property.

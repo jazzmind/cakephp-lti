@@ -171,7 +171,6 @@ class ResourceLink extends LtiAppModel {
 		return parent::afterFind($results, $primary);
 	}
 
-	// we should have enough info to bake a badge
 	public function beforeSave($options = []) {
 		parent::beforeSave($options);
 		if (is_array($this->data['ResourceLink']['settings'])) {
@@ -180,6 +179,7 @@ class ResourceLink extends LtiAppModel {
 		return true;
 	}
 /**
+ * 
  * Get a setting value.
  *
  * @param string $name    Name of setting
@@ -515,4 +515,9 @@ class ResourceLink extends LtiAppModel {
 // 		return $shares;
 
 // 	}
+
+
+
 }
+
+

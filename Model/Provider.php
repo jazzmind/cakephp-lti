@@ -132,13 +132,15 @@ class Provider extends LtiAppModel {
  *  @var array Callback functions for handling requests.
  */
 	public $callbackHandler = NULL;
-/**
- *  @var array LTI parameter constraints for auto validation checks.
- */
+	
+	/**
+	 *  @var array LTI parameter constraints for auto validation checks.
+	 */
 	public $constraints = NULL;
-/**
- *  @var array List of supported message types and associated callback type names
- */
+
+	/**
+	 *  @var array List of supported message types and associated callback type names
+	 */
 	public $messageTypes = [
 		'basic-lti-launch-request' => 'launch',
 		'ConfigureLaunchRequest' => 'configure',
@@ -146,9 +148,10 @@ class Provider extends LtiAppModel {
 		'ContentItemSelectionRequest' => 'content-item',
 		'APITokenRequest' => 'authenticate'
 	];
-/**
- *  @var array List of supported message types and associated class methods
- */
+
+	/**
+	 *  @var array List of supported message types and associated class methods
+	 */
 	public $methodNames = [
 		'basic-lti-launch-request' => 'onLaunch',
 		'ConfigureLaunchRequest' => 'onConfigure',
@@ -156,9 +159,10 @@ class Provider extends LtiAppModel {
 		'ContentItemSelectionRequest' => 'onContentItem',
 		'APITokenRequest' => 'onAuthenticate'
 	];
-/**
- *  @var array Names of LTI parameters to be retained in the settings property.
- */
+
+	/**
+	 *  @var array Names of LTI parameters to be retained in the settings property.
+	 */
 	public $lti_settings_names = [
 		'ext_resource_link_content', 'ext_resource_link_content_signature',
 		'lis_result_sourcedid', 'lis_outcome_service_url',
@@ -167,19 +171,19 @@ class Provider extends LtiAppModel {
 		'ext_ims_lti_tool_setting', 'ext_ims_lti_tool_setting_id', 'ext_ims_lti_tool_setting_url'
 	];
 
-/**
- * @var array Permitted LTI versions for messages.
- */
+	/**
+	 * @var array Permitted LTI versions for messages.
+	 */
 	public $LTI_VERSIONS = array(self::LTI_VERSION1, self::LTI_VERSION2);
 
-/**
- * Add a parameter constraint to be checked on launch
- *
- * @param string $name          Name of parameter to be checked
- * @param boolean $required     True if parameter is required (optional, default is TRUE)
- * @param int $max_length       Maximum permitted length of parameter value (optional, default is NULL)
- * @param array $message_types  Array of message types to which the constraint applies (default is all)
- */
+	/**
+	 * Add a parameter constraint to be checked on launch
+	 *
+	 * @param string $name          Name of parameter to be checked
+	 * @param boolean $required     True if parameter is required (optional, default is TRUE)
+	 * @param int $max_length       Maximum permitted length of parameter value (optional, default is NULL)
+	 * @param array $message_types  Array of message types to which the constraint applies (default is all)
+	 */
 	public function setParameterConstraint($name, $required = TRUE, $max_length = NULL, $message_types = NULL) {
 
 		$name = trim($name);

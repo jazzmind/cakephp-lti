@@ -325,14 +325,13 @@ class LtiRequestComponent extends Component {
 			'user_id' => $user_id
 		];
 		$this->LtiUser = ClassRegistry::init('Lti.LtiUser');
-		$result = $this->LtiUser->find('first', ['conditions' => $conditions]);
+		$result = $this->LtiUser->find('first', ['contain' => [], 'conditions' => $conditions]);
 		if (empty($result)) {
-			$this->LtiUser->consumer_key = $this->LtiUser->data['consumer_key'] = $conditions['consumer_key'];
-			$this->LtiUser->context_id = $this->LtiUser->data['context_id'] = $conditions['context_id'];
-			$this->LtiUser->user_id = $this->LtiUser->data['user_id'] = $conditions['user_id'];
+			$this->LtiUser->consumer_key = $this->LtiUser->data['LtiUser']['consumer_key'] = $conditions['consumer_key'];
+			$this->LtiUser->context_id = $this->LtiUser->data['LtiUser']['context_id'] = $conditions['context_id'];
+			$this->LtiUser->user_id = $this->LtiUser->data['LtiUser']['user_id'] = $conditions['user_id'];
 		} else {
-			$this->LtiUser->data = $result['LtiUser'];
-			$this->LtiUser->id = $this->LtiUser->data['id'];
+			$this->LtiUser->data = $result;
 			// we're going to keep going, even though we found a matching user
 			// this is so we can update our own records with any user changes that have happened 
 			// through the tool consumer, e.g. name changes
@@ -363,26 +362,24 @@ class LtiRequestComponent extends Component {
 		#
 		//pr($data);exit;
 		if (!empty($data['lis_result_sourcedid'])) {
-			if (empty($this->LtiUser->data['lis_result_sourcedid']) || $this->LtiUser->data['lis_result_sourcedid'] != $data['lis_result_sourcedid']) {
-				$this->LtiUser->data['lis_result_sourcedid'] = $data['lis_result_sourcedid'];
+			if (empty($this->LtiUser->data['LtiUser']['lis_result_sourcedid']) || $this->LtiUser->data['LtiUser']['lis_result_sourcedid'] != $data['lis_result_sourcedid']) {
+				$this->LtiUser->data['LtiUser']['lis_result_sourcedid'] = $data['lis_result_sourcedid'];
 			}
 		}
 		
 		if (!empty($data['lis_person_sourcedid'])) {
-			if (empty($this->LtiUser->data['lis_person_sourcedid']) || $this->LtiUser->data['lis_person_sourcedid'] != $data['lis_person_sourcedid']) {
-				$this->LtiUser->data['lis_person_sourcedid'] = $data['lis_person_sourcedid'];
+			if (empty($this->LtiUser->data['LtiUser']['lis_person_sourcedid']) || $this->LtiUser->data['LtiUser']['lis_person_sourcedid'] != $data['lis_person_sourcedid']) {
+				$this->LtiUser->data['LtiUser']['lis_person_sourcedid'] = $data['lis_person_sourcedid'];
 			}
 		}
 
-		if (empty($this->LtiUser->data['lis_person_sourcedid'])) {
-			$this->LtiUser->data['lis_person_sourcedid'] = $data['lis_person_sourcedid'] = $email;
+		if (empty($this->LtiUser->data['LtiUser']['lis_person_sourcedid'])) {
+			$this->LtiUser->data['LtiUser']['lis_person_sourcedid'] = $data['lis_person_sourcedid'] = $email;
 		}
 
 		$this->LtiUser->save($this->LtiUser->data);
 		$this->LtiUser->data = $this->LtiUser->find('first', ['conditions' => $conditions]);
-		foreach ($this->LtiUser->data as $k => $v) {
-			$this->LtiUser->$k = $v;
-		}
+
 
 		// not sure why we want to delete if we didn't get the sourceid - we still have an entry
 		// if (empty($this->LtiUser->lis_result_sourcedid)) {
@@ -463,11 +460,7 @@ class LtiRequestComponent extends Component {
 		### Persist changes to consumer
 		#
 		if ($doSaveConsumer) {
-			foreach ($this->Consumer->data as $k => $v) {
-				$this->Consumer->$k = $v;
-			}
 			$this->Consumer->save($this->Consumer->data);
-
 		}
 	}
 

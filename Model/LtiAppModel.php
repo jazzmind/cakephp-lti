@@ -7,6 +7,8 @@ class LtiAppModel extends AppModel
 	public $tablePrefix = 'lti_';
 	public $recursive = -1;
 
+	// this will set model properties based on the schema and data returned from a find('first')
+	// or any find with just 1 result. E.g. $this->data[LtiUser][id] will become $this->id
 	public function afterFind($results, $primary = false) {
 		parent::afterFind($results, $primary);
 		if (!$primary or empty($results)) {
@@ -21,6 +23,8 @@ class LtiAppModel extends AppModel
 		}
 
 		foreach ($set as $key => $value) {
+			// if there's an empty value, set the default value listed in the schema
+			// this is bad? it means the value in the DB and the value returned might not be the same
 			if (empty($value) and isset($this->_schema[$key]['default'])) {
 				$set[$key] = $value = $this->_schema[$key]['default'];
 			}

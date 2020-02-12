@@ -7,7 +7,7 @@ class LtiRequestComponent extends Component {
 	public function initialize(Controller $controller) {
 		$this->controller = $controller;
 		$this->Provider = $this->controller->Provider;
-	}	
+	}
 
 	public function validate() {
 		$now = time();
@@ -166,7 +166,6 @@ class LtiRequestComponent extends Component {
 			return false;
 		}
 		try {
-			
 			$this->OAuthStore = ClassRegistry::init('Lti.OAuthStore');
 			$store = new OAuthStore($this->Provider, $this->Consumer);
 			$server = new OAuthServer($this->OAuthStore);
@@ -333,7 +332,7 @@ class LtiRequestComponent extends Component {
 		} else {
 			$this->LtiUser->data = $result;
 			// we're going to keep going, even though we found a matching user
-			// this is so we can update our own records with any user changes that have happened 
+			// this is so we can update our own records with any user changes that have happened
 			// through the tool consumer, e.g. name changes
 		}
 		#
@@ -366,7 +365,7 @@ class LtiRequestComponent extends Component {
 				$this->LtiUser->data['LtiUser']['lis_result_sourcedid'] = $data['lis_result_sourcedid'];
 			}
 		}
-		
+
 		if (!empty($data['lis_person_sourcedid'])) {
 			if (empty($this->LtiUser->data['LtiUser']['lis_person_sourcedid']) || $this->LtiUser->data['LtiUser']['lis_person_sourcedid'] != $data['lis_person_sourcedid']) {
 				$this->LtiUser->data['LtiUser']['lis_person_sourcedid'] = $data['lis_person_sourcedid'];

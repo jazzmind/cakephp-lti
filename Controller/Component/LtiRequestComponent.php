@@ -168,7 +168,7 @@ class LtiRequestComponent extends Component {
 		try {
 			$this->OAuthStore = ClassRegistry::init('Lti.OAuthStore');
 			$store = new OAuthStore($this->Provider, $this->Consumer);
-			$server = new OAuthServer($this->OAuthStore);
+			$server = new OAuthServer($store);
 			$method = new OAuthSignatureMethod_HMAC_SHA1();
 			$server->add_signature_method($method);
 			$request = OAuthRequest::from_request($this->controller->request->method(), Router::url(null, true));

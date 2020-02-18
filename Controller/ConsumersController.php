@@ -343,6 +343,51 @@ class ConsumersController extends LtiAppController {
 		$this->redirect('/admin/lti/consumers/index');
 	}
 
+	public function admin_edit($consumerKey) {
+		$consumer = $this->Consumer->find('first', [
+			'recursive' => -1,
+			'conditions' => ['consumer_key' => $consumerKey]
+		]);
+
+		if ($this->request->is('post') || $this->request->is('put')) {
+			$this->request->data['Consumer']['consumer_key'] = $consumer['Consumer']['consumer_key'];
+
+			$consumerName = $this->request->data['Consumer']['consumer_name'];
+			$this->request->data['Consumer']['consumer_guid'] = strtr(strtolower(ClassRegistry::init('Inflector')->slug($consumerName)), '_','-');
+
+			if (!empty($this->request->data['Consumer']['enable_from'])) {
+				$enableFrom = new DateTime($this->request->data['Consumer']['enable_from']);
+				$enableFrom->setTimezone(new DateTimeZone("UTC"));
+				$this->request->data['Consumer']['enable_from'] = $enableFrom->format('c');
+			} else {
+				$this->request->data['Consumer']['enable_from'] = null;
+			}
+
+			if (!empty($this->request->data['Consumer']['enable_until'])) {
+				$enableUntil = new DateTime($this->request->data['Consumer']['enable_until']);
+				$enableUntil->setTimezone(new DateTimeZone("UTC"));
+				$this->request->data['Consumer']['enable_until'] = $enableUntil->format('c');
+			} else {
+				$this->request->data['Consumer']['enable_until'] = null;
+			}
+
+			if ($this->Consumer->save($this->request->data, true, ['enabled', 'protect', 'name', 'consumer_name', 'css_path', 'enable_from', 'enable_until'])) {
+				$this->redirect(['action' => 'index']);
+			}
+		} else {
+			$this->request->data = $consumer;
+			if (!empty($this->request->data['Consumer']['enable_from'])) {
+				$enableFrom = new DateTime($this->request->data['Consumer']['enable_from']);
+				$this->request->data['Consumer']['enable_from'] = $enableFrom->format('d/m/Y h:i a');
+			}
+
+			if (!empty($this->request->data['Consumer']['enable_until'])) {
+				$enableUntil = new DateTime($this->request->data['Consumer']['enable_until']);
+				$this->request->data['Consumer']['enable_until'] = $enableUntil->format('d/m/Y h:i a');
+			}
+		}
+	}
+
 	public function admin_delete($consumer_key) {
 		if (!$this->Consumer->deleteAll(['consumer_key' => $consumer_key])) {
 			$this->alert('Could not delete - delete failed', 'bad');

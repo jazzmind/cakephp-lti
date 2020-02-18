@@ -171,6 +171,11 @@ class ProvidersControllerTest extends ControllerTestCase {
 			} else {
 				$this->assertEquals($enrolmentCountBefore, $enrolmentCountAfter);
 			}
+
+			if (!empty($testCase['returnURL']) == 'APITokenRequest') {
+				$this->assertContains('return_url=', $this->headers['Location']);
+			}
+
 		}
 
 	}

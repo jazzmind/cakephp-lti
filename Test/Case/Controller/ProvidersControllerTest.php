@@ -184,7 +184,6 @@ class ProvidersControllerTest extends ControllerTestCase {
 		$config = Configure::read('App');
 		if (php_sapi_name() == "cli") {
 			$launch_url = rtrim($config['fullBaseUrl'], '/') . '/app/Console/lti/providers/request';
-			
 		} else {
 			$launch_url = rtrim($config['fullBaseUrl'], '/') . '/lti/providers/request';
 		}

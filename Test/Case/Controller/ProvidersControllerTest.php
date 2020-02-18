@@ -155,14 +155,14 @@ class ProvidersControllerTest extends ControllerTestCase {
 				$this->assertFalse(isset($this->headers['Location']));
 				continue;
 			}
-			
+
 			if ($testCase['messageType'] == 'APITokenRequest') {
 				$this->assertContains('"jwt":', $result);
 			} else {
 				$this->assertContains('do=secure', $this->headers['Location']);
 			}
 			if ($testCase['newUser']) {
-				$this->assertEquals($userCountBefore + 1, $userCountAfter, print_r($testCase, true));
+				$this->assertEquals($userCountBefore + 1, $userCountAfter);
 			} else {
 				$this->assertEquals($userCountBefore, $userCountAfter);
 			}

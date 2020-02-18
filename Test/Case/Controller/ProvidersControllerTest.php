@@ -51,8 +51,6 @@ class ProvidersControllerTest extends ControllerTestCase {
 			'guid1',	// correct
 			'guid2'		// correct
 		];
-		$messageType = 'APITokenRequest';
-		// $messageType = "basic-lti-launch-request";
 		$testCases = [
 			[
 				'key' => 1,
@@ -79,7 +77,18 @@ class ProvidersControllerTest extends ControllerTestCase {
 				'messageType' => 'basic-lti-launch-request',
 				'correct' => true,		// all info are correct
 				'newUser' => false,
-				'newEnrolment' => true
+				'newEnrolment' => true,
+				'returnURL' => ''
+			],
+			[
+				'key' => 2,
+				'secret' => 2,
+				'guid' => 2,
+				'messageType' => 'basic-lti-launch-request',
+				'correct' => true,		// all info are correct
+				'newUser' => false,
+				'newEnrolment' => false,
+				'returnURL' => 'http://google.com/'
 			],
 			[
 				'key' => 0,	// key incorrect
@@ -123,12 +132,17 @@ class ProvidersControllerTest extends ControllerTestCase {
 			$this->Enrolment = ClassRegistry::init("Enrolment");
 			$userCountBefore = $this->User->find('count');
 			$enrolmentCountBefore = $this->Enrolment->find('count');
-			$data = $this->_dataForLti($user, [
+			$options = [
 				'key' => $keys[$testCase['key']],
 				'secret' => $secrets[$testCase['secret']],
 				'guid' => $guids[$testCase['guid']],
-				'messageType' => $testCase['messageType']
-			]);
+				'messageType' => $testCase['messageType'],
+			];
+			if(isset($testCase['returnURL'])) {
+				$options['returnURL'] = $testCase['returnURL'];
+			}
+
+			$data = $this->_dataForLti($user, $options);
 			$_SERVER['QUERY_STRING'] = http_build_query($data);
 			$result = $this->testAction('/lti/providers/request', [
 				'data' => $data,
@@ -157,6 +171,11 @@ class ProvidersControllerTest extends ControllerTestCase {
 			} else {
 				$this->assertEquals($enrolmentCountBefore, $enrolmentCountAfter);
 			}
+
+			if (!empty($testCase['returnURL']) == 'APITokenRequest') {
+				$this->assertContains('return_url=', $this->headers['Location']);
+			}
+
 		}
 
 	}
@@ -189,6 +208,10 @@ class ProvidersControllerTest extends ControllerTestCase {
 			"lis_person_contact_email_primary" => $user["email"],
 			"lis_person_sourcedid" => "school.edu:" .$user["id"]
 		];
+
+		if(isset($options['returnURL'])) {
+			$launch_data['launch_presentation_return_url'] = $options['returnURL'];
+		}
 
 		#
 		# END OF CONFIGURATION SECTION

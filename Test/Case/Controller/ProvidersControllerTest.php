@@ -4,6 +4,8 @@ App::uses('ProvidersController', 'Lti.Controller');
 /**
  * ProvidersController Test Case
  *
+ * IMPORTANT, if you are running the tests from a browser make sure you run it from the same URL as set up in PRACTERA_URL environmental variable
+ * It will not work from an alternate domain because of the launch URL.
  */
 class ProvidersControllerTest extends ControllerTestCase {
 
@@ -27,7 +29,7 @@ class ProvidersControllerTest extends ControllerTestCase {
 		'app.institution',
 		'plugin.project.timeline',
 		'plugin.lti.consumer',
-		'plugin.lti.ltiuser',
+		'plugin.lti.lti_user',
 		// 'plugin.lti.nonce',
 		'plugin.lti.resource_link',
 		// 'plugin.lti.share_key',
@@ -139,6 +141,7 @@ class ProvidersControllerTest extends ControllerTestCase {
 				$this->assertFalse(isset($this->headers['Location']));
 				continue;
 			}
+
 			if ($testCase['messageType'] == 'APITokenRequest') {
 				$this->assertContains('"jwt":', $result);
 			} else {
@@ -159,7 +162,13 @@ class ProvidersControllerTest extends ControllerTestCase {
 	}
 
 	protected function _dataForLti($user, $options) {
-		$launch_url = 'http://127.0.0.1:8080/lti/providers/request';
+		$config = Configure::read('App');
+		if (php_sapi_name() == "cli") {
+			$launch_url = rtrim($config['fullBaseUrl'], '/') . '/app/Console/lti/providers/request';
+		} else {
+			$launch_url = rtrim($config['fullBaseUrl'], '/') . '/lti/providers/request';
+		}
+
 		$launch_data = [
 			"roles" => "Learner",	#only value that should be provided for now
 
@@ -197,6 +206,7 @@ class ProvidersControllerTest extends ControllerTestCase {
 		$launch_data["oauth_version"] = "1.0";
 		$launch_data["oauth_nonce"] = uniqid('', true);
 		$launch_data["oauth_timestamp"] = $now->getTimestamp();
+
 		$launch_data["oauth_signature_method"] = "HMAC-SHA1";
 
 		# In OAuth, request parameters must be sorted by name
@@ -209,6 +219,7 @@ class ProvidersControllerTest extends ControllerTestCase {
 		}
 
 		$base_string = "POST&" . urlencode($launch_url) . "&" . rawurlencode(implode("&", $launch_params));
+
 		$secret = urlencode($options['secret']) . "&";
 		$launch_data["oauth_signature"] = base64_encode(hash_hmac("sha1", $base_string, $secret, true));
 		return $launch_data;

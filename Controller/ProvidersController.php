@@ -94,26 +94,6 @@ class ProvidersController extends LtiAppController {
 
 	}
 
-	protected function _sendResponse($response) {
-		$default = ['body' => null, 'status' => 200, 'type' => "application/json; charset=UTF-8", 'error' => false];
-		$response = am($default, $response);
-
-		$this->response->statusCode($response['status']);
-		$this->response->type($response['type']);
-
-		if (isset($response['body'])) {
-			// json encode the response if necessary
-			if (!is_string($response['body']) OR
-				( (stripos($response['type'], 'json') !== false) AND !$this->isJson($response['body']) ) ) {
-				$response['body'] = json_encode($response['body']);
-			}
-			$this->response->body($response['body']);
-		}
-
-		$this->response->send();
-		ob_flush(); flush();
-	}
-
 	/**
 	 * Perform the result of an action.
 	 *
@@ -127,7 +107,16 @@ class ProvidersController extends LtiAppController {
 				return $this->redirect($this->Provider->redirectURL);
 			}
 			if (!empty($this->Provider->output)) {
-				return $this->_sendResponse(['body' => $this->Provider->output, 'status' => 200, 'error' => false]);
+				if (is_array($this->Provider->output)) {
+					$this->layout = false;
+					$this->autoRender = false;
+					$this->set('output', json_encode($this->Provider->output));
+					$this->header('Content-Type: application/json');
+					$this->render('json');
+					return;
+				}
+				$this->set('output', $this->Provider->output);
+				return;
 			}
 		}
 

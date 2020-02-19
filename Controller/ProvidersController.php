@@ -114,7 +114,6 @@ class ProvidersController extends LtiAppController {
 					$this->header('Content-Type: application/json');
 					$this->render('json');
 					return;
-					//return $this->_ajaxsuccess($this->Provider->output);
 				}
 				$this->set('output', $this->Provider->output);
 				return;

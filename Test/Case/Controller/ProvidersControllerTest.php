@@ -24,6 +24,8 @@ class ProvidersControllerTest extends ControllerTestCase {
 		'app.user_auth',
 		'app.user_auth_token',
 		'app.session',
+		'app.context',
+		'app.db_config',
 		'app.experience',
 		'app.program',
 		'app.institution',
@@ -157,6 +159,8 @@ class ProvidersControllerTest extends ControllerTestCase {
 			}
 
 			if ($testCase['messageType'] == 'APITokenRequest') {
+				json_decode($result);
+				$this->assertTrue(json_last_error() == JSON_ERROR_NONE, 'the result is not a valid json format');
 				$this->assertContains('"jwt":', $result);
 			} else {
 				$this->assertContains('do=secure', $this->headers['Location']);

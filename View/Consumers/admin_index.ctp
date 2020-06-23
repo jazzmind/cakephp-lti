@@ -3,8 +3,8 @@
 		<?php
 		echo "<span class='button-group pull-right'>";
 		echo $this->Html->link('<i class="fa fa-plus"></i> add', array('admin' => true, 'plugin' => 'lti', 'controller' => 'consumers', 'action' => 'add'), array('escape' => false, 'class' => 'btn btn-primary btn-sm'));
-		echo "&nbsp;";
-		echo $this->Html->link('<i class="fa fa-plug"></i> integrations', array('admin' => true, 'plugin' => 'lti','controller' => 'lti_resource_links', 'action' => 'index'), array('escape' => false, 'class' => 'btn btn-primary btn-sm'));
+		// echo "&nbsp;";
+		// echo $this->Html->link('<i class="fa fa-plug"></i> integrations', array('admin' => true, 'plugin' => 'lti','controller' => 'lti_resource_links', 'action' => 'index'), array('escape' => false, 'class' => 'btn btn-primary btn-sm'));
 		echo "</span>";
 	?>
 	</h1>

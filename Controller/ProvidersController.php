@@ -32,7 +32,7 @@ class ProvidersController extends LtiAppController {
 		return parent::isAuthorized($user);
 	}
 
-	public function request() {
+	public function request($cohort) {
 		$this->layout = 'basic';
 		#
 		### Perform action
@@ -40,7 +40,7 @@ class ProvidersController extends LtiAppController {
 		$this->response->header('X-Frame-Options', '');
 		$this->_init();
 
-		$this->LtiRequest->validate();
+		$this->LtiRequest->validate($cohort);
 
 		if ($this->LtiRequest->authenticate()) {
 

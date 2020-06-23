@@ -9,9 +9,10 @@ class LtiRequestComponent extends Component {
 		$this->Provider = $this->controller->Provider;
 	}
 
-	public function validate() {
+	public function validate($cohort) {
 		$now = time();
 		$data = $this->controller->request->data;
+		$this->cohort = $cohort;
 		$this->Provider->isOK = false;
 
 		// Check consumer key

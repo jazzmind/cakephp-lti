@@ -45,6 +45,7 @@
 			</div>
 			<?= $this->Form->input('Consumer.name'); ?>
 			<?= $this->Form->input('Consumer.consumer_name'); ?>
+			<?= $this->Form->input('Consumer.consumer_guid'); ?>
 			<?= $this->Form->input('Consumer.css_path'); ?>
 			<?= $this->Form->input('Consumer.enable_from', [
 				'type' => 'text',

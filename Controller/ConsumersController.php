@@ -324,18 +324,18 @@ class ConsumersController extends LtiAppController {
 
 	public function admin_add() {
 		$user = $this->Auth->user();
-		$name = $user['Experience']['name'];
+		$name = $user['Institution']['name'];
 		$secret = strtoupper(substr(sha1(strtotime("now") . uniqid()), 1, 4) . '-' . substr(sha1(strtotime("now") . uniqid()), 1, 4). '-' . substr(sha1(strtotime("now") . uniqid()), 1, 4));   
 		$data = [
 			'name' => $name,
 			'secret' => $secret,
 			'lti_version' => 'LTI-1p0',
-			'consumer_name' => $name,
+			'consumer_name' => $name . " LMS",
 			'consumer_guid' => strtr(strtolower(ClassRegistry::init('Inflector')->slug($name)), '_','-'),
 			'consumer_version' => 1,
 			'protect' => true,
 			'enabled' => true,
-			'timeline_id' => $user['timeline_id']
+			'institution_id' => $user['institution_id']
 		];
 		$this->Consumer->create();
 		$this->Consumer->save($data);
@@ -350,10 +350,12 @@ class ConsumersController extends LtiAppController {
 		]);
 
 		if ($this->request->is('post') || $this->request->is('put')) {
+			// cannot change this
 			$this->request->data['Consumer']['consumer_key'] = $consumer['Consumer']['consumer_key'];
 
-			$consumerName = $this->request->data['Consumer']['consumer_name'];
-			$this->request->data['Consumer']['consumer_guid'] = strtr(strtolower(ClassRegistry::init('Inflector')->slug($consumerName)), '_','-');
+			// $consumerName = $this->request->data['Consumer']['consumer_name'];
+			// $this->request->data['Consumer']['consumer_name'] = $this->request->data['Consumer']['consumer_name'];
+			// strtr(strtolower(ClassRegistry::init('Inflector')->slug($consumerName)), '_','-');
 
 			if (!empty($this->request->data['Consumer']['enable_from'])) {
 				$enableFrom = new DateTime($this->request->data['Consumer']['enable_from']);

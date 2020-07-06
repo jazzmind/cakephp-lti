@@ -9,7 +9,7 @@ class LtiRequestComponent extends Component {
 		$this->Provider = $this->controller->Provider;
 	}
 
-	public function validate($cohort) {
+	public function validate($cohort=null) {
 		$now = time();
 		$data = $this->controller->request->data;
 		$this->cohort = $cohort;
@@ -310,26 +310,29 @@ class LtiRequestComponent extends Component {
 		if (empty($this->ResourceLink)) {
 			return;
 		}
- 		$data = $this->controller->request->data;
-		#
-		### Set the user instance
-		#
-		$user_id = '';
-		if (isset($data['user_id'])) {
-			$user_id = trim($data['user_id']);
-		}
-
+		$data = $this->controller->request->data;
 		$conditions = [
 			'consumer_key' => $this->Consumer->consumer_key,
 			'context_id' => $this->ResourceLink->lti_context_id,
-			'user_id' => $user_id
 		];
+
+		#
+		### Set the user instance
+		#
+		if (isset($data['user_id'])) {
+			$conditions['user_id'] = trim($data['user_id']);
+		}
+
 		$this->LtiUser = ClassRegistry::init('Lti.LtiUser');
 		$result = $this->LtiUser->find('first', ['contain' => [], 'conditions' => $conditions]);
+
 		if (empty($result)) {
+			$this->LtiUser->user_id = $this->LtiUser->data['LtiUser']['user_id'] = null;
 			$this->LtiUser->consumer_key = $this->LtiUser->data['LtiUser']['consumer_key'] = $conditions['consumer_key'];
 			$this->LtiUser->context_id = $this->LtiUser->data['LtiUser']['context_id'] = $conditions['context_id'];
-			$this->LtiUser->user_id = $this->LtiUser->data['LtiUser']['user_id'] = $conditions['user_id'];
+			if (!empty($conditions['user_id'])) {
+				$this->LtiUser->user_id = $this->LtiUser->data['LtiUser']['user_id'] = $conditions['user_id'];
+			}
 		} else {
 			$this->LtiUser->data = $result;
 			// we're going to keep going, even though we found a matching user
@@ -360,7 +363,7 @@ class LtiRequestComponent extends Component {
 		#
 		### Save the user instance, or delete it if we weren't passed an LIS source ID
 		#
-		//pr($data);exit;
+	
 		if (!empty($data['lis_result_sourcedid'])) {
 			if (empty($this->LtiUser->data['LtiUser']['lis_result_sourcedid']) || $this->LtiUser->data['LtiUser']['lis_result_sourcedid'] != $data['lis_result_sourcedid']) {
 				$this->LtiUser->data['LtiUser']['lis_result_sourcedid'] = $data['lis_result_sourcedid'];

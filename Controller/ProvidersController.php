@@ -37,9 +37,9 @@ class ProvidersController extends LtiAppController {
 		#
 		### Perform action
 		#
+
 		$this->response->header('X-Frame-Options', '');
 		$this->_init();
-
 		$this->LtiRequest->validate($cohort);
 
 		if ($this->LtiRequest->authenticate()) {

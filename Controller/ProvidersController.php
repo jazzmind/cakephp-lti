@@ -32,7 +32,7 @@ class ProvidersController extends LtiAppController {
 		return parent::isAuthorized($user);
 	}
 
-	public function request($cohort) {
+	public function request($cohort=null) {
 		$this->layout = 'basic';
 		#
 		### Perform action

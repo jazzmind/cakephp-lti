@@ -311,28 +311,36 @@ class LtiRequestComponent extends Component {
 			return;
 		}
 		$data = $this->controller->request->data;
+		$email = (isset($data['lis_person_contact_email_primary'])) ? $data['lis_person_contact_email_primary'] : '';
+
+		// cannot match a user without the lis_person_sourcedid or email
+		if (empty($data['lis_person_sourcedid']) && empty($email)) {
+			return;
+		}
+		
+		// if there is no lis_person_sourcedid but an email we will use that
+		if (empty($data['lis_person_sourcedid'])) {
+			$data['lis_person_sourcedid'] = $email;
+		}
+
 		$conditions = [
 			'consumer_key' => $this->Consumer->consumer_key,
 			'context_id' => $this->ResourceLink->lti_context_id,
+			'lis_person_sourcedid' => [ trim($data['lis_person_sourcedid']), trim($email) ]
 		];
+	
+		$this->LtiUser = ClassRegistry::init('Lti.LtiUser');
+		$result = $this->LtiUser->find('first', ['contain' => [], 'conditions' => $conditions]);
 
 		#
 		### Set the user instance
 		#
-		if (isset($data['user_id'])) {
-			$conditions['user_id'] = trim($data['user_id']);
-		}
-
-		$this->LtiUser = ClassRegistry::init('Lti.LtiUser');
-		$result = $this->LtiUser->find('first', ['contain' => [], 'conditions' => $conditions]);
-
 		if (empty($result)) {
 			$this->LtiUser->user_id = $this->LtiUser->data['LtiUser']['user_id'] = null;
+			$this->LtiUser->lis_person_sourcedid = $this->LtiUser->data['LtiUser']['lis_person_sourcedid'] = trim($data['lis_person_sourcedid']);
 			$this->LtiUser->consumer_key = $this->LtiUser->data['LtiUser']['consumer_key'] = $conditions['consumer_key'];
 			$this->LtiUser->context_id = $this->LtiUser->data['LtiUser']['context_id'] = $conditions['context_id'];
-			if (!empty($conditions['user_id'])) {
-				$this->LtiUser->user_id = $this->LtiUser->data['LtiUser']['user_id'] = $conditions['user_id'];
-			}
+			
 		} else {
 			$this->LtiUser->data = $result;
 			// we're going to keep going, even though we found a matching user
@@ -350,7 +358,6 @@ class LtiRequestComponent extends Component {
 		#
 		### Set the user email
 		#
-		$email = (isset($data['lis_person_contact_email_primary'])) ? $data['lis_person_contact_email_primary'] : '';
 		$this->LtiUser->setEmail($email, $this->defaultEmail);
 
 		#
@@ -370,14 +377,9 @@ class LtiRequestComponent extends Component {
 			}
 		}
 
-		if (!empty($data['lis_person_sourcedid'])) {
-			if (empty($this->LtiUser->data['LtiUser']['lis_person_sourcedid']) || $this->LtiUser->data['LtiUser']['lis_person_sourcedid'] != $data['lis_person_sourcedid']) {
-				$this->LtiUser->data['LtiUser']['lis_person_sourcedid'] = $data['lis_person_sourcedid'];
-			}
-		}
-
+		// if our result didn't have an lis_person_sourcedid use email
 		if (empty($this->LtiUser->data['LtiUser']['lis_person_sourcedid'])) {
-			$this->LtiUser->data['LtiUser']['lis_person_sourcedid'] = $data['lis_person_sourcedid'] = $email;
+			$this->LtiUser->data['LtiUser']['lis_person_sourcedid'] = $data['lis_person_sourcedid'];
 		}
 
 		$this->LtiUser->save($this->LtiUser->data);

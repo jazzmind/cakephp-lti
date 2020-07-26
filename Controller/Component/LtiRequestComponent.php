@@ -31,8 +31,11 @@ class LtiRequestComponent extends Component {
 		}
 
 		switch ($data['lti_message_type']) {
+			case 'APITokenRequest':
+				$this->Provider->isJsonOutput = true;
+				break;
 			case 'ContentItemSelectionRequest':
-				if (empty($data['content_item_return_url']) or !(strlen(trim($data['content_item_return_url'])) > 0)) {
+					if (empty($data['content_item_return_url']) or !(strlen(trim($data['content_item_return_url'])) > 0)) {
 					return $this->Provider->reason = 'Missing content_item_return_url parameter.';
 				}
 

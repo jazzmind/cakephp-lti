@@ -123,10 +123,16 @@ class Provider extends LtiAppModel {
  *  @var string HTML to be displayed on an unsuccessful completion of the request and no return URL is available.
  */
 	public $error_output = NULL;
+
+	/**
+ *  @var string Display any error output as json
+ */
+	public $isJsonOutput = false;
 /**
  *  @var boolean Whether debug messages explaining the cause of errors are to be returned to the tool consumer.
  */
 	public $debugMode = FALSE;
+
 
 /**
  *  @var array Callback functions for handling requests.

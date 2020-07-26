@@ -107,7 +107,7 @@ class ProvidersController extends LtiAppController {
 				return $this->redirect($this->Provider->redirectURL);
 			}
 			if (!empty($this->Provider->output)) {
-				if (is_array($this->Provider->output)) {
+				if ($this->Provider->isJsonOutput) {
 					$this->layout = false;
 					$this->autoRender = false;
 					$this->set('output', json_encode($this->Provider->output));
@@ -121,6 +121,15 @@ class ProvidersController extends LtiAppController {
 		}
 
 		$this->LtiRequest->doCallbackMethod('error');
+
+		if ($this->Provider->isJsonOutput) {
+			$this->layout = false;
+			$this->autoRender = false;
+			$this->set('output', json_encode(['error' => $this->Provider->error_output, 'reason' =>  $this->Provider->reason, 'message' =>  $this->Provider->message]));
+			$this->header('Content-Type: application/json');
+			$this->render('json');
+			return;
+		}
 
 		#
 		### If not valid, return an error message to the tool consumer if a return URL is provided

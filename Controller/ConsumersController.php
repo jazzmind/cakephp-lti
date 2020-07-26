@@ -373,7 +373,7 @@ class ConsumersController extends LtiAppController {
 				$this->request->data['Consumer']['enable_until'] = null;
 			}
 
-			if ($this->Consumer->save($this->request->data, true, ['enabled', 'protect', 'name', 'consumer_name', 'css_path', 'enable_from', 'enable_until'])) {
+			if ($this->Consumer->save($this->request->data, true, ['enabled', 'protect', 'name', 'consumer_name', 'consumer_guid', 'css_path', 'enable_from', 'enable_until'])) {
 				$this->redirect(['action' => 'index']);
 			}
 		} else {

@@ -118,7 +118,13 @@ class LtiRequestComponent extends Component {
 			if (empty($this->Consumer->consumer_guid) or ($this->Consumer->consumer_guid != $data['tool_consumer_instance_guid'])) {
 				// update the tool consumer GUID
 				$this->Consumer->consumer_guid = $data['tool_consumer_instance_guid'];
-				$this->Consumer->saveField('consumer_guid', $data['tool_consumer_instance_guid']);
+				$this->Consumer->id = $result['Consumer']['id'];
+				$this->Consumer->save([
+					'id' => $result['Consumer']['id'], 
+					'consumer_guid' => $data['tool_consumer_instance_guid']
+				], [
+					'validate' => false
+				]);
 			}
 		}
 

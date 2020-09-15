@@ -99,6 +99,7 @@ class LtiRequestComponent extends Component {
 		#
 		$this->Consumer = ClassRegistry::init('Lti.Consumer');
 
+		$this->Consumer->contain();
 		$result = $this->Consumer->findByConsumerKey($data['oauth_consumer_key']);
 		if (empty($result)) {
 			return $this->Provider->reason = 'Invalid consumer key.';
@@ -117,14 +118,9 @@ class LtiRequestComponent extends Component {
 			}
 			if (empty($this->Consumer->consumer_guid) or ($this->Consumer->consumer_guid != $data['tool_consumer_instance_guid'])) {
 				// update the tool consumer GUID
-				$this->Consumer->consumer_guid = $data['tool_consumer_instance_guid'];
+				$this->Consumer->consumer_guid = $result['Consumer']['consumer_guid'] = $data['tool_consumer_instance_guid'];
 				$this->Consumer->id = $result['Consumer']['id'];
-				$this->Consumer->save([
-					'id' => $result['Consumer']['id'], 
-					'consumer_guid' => $data['tool_consumer_instance_guid']
-				], [
-					'validate' => false
-				]);
+				$this->Consumer->save($result['Consumer']);
 			}
 		}
 
@@ -577,7 +573,7 @@ class LtiRequestComponent extends Component {
 						$doSaveResourceLink = FALSE;
 						$this->LtiUser->getResourceLink()->primary_consumer_key = $key;
 						$this->LtiUser->getResourceLink()->primary_resource_link_id = $id;
-						$this->LtiUser->getResourceLink()->share_approved = $share_key->auto_approve;
+						$this->LtiUser->getResourceLink()->share_approved = $this->SheareKey->auto_approve;
 						$this->LtiUser->getResourceLink()->modified = time();
 // Remove share key
 						$this->ShareKey->delete();

@@ -112,8 +112,13 @@ class LtiRequestComponent extends Component {
 			if (empty($data['tool_consumer_instance_guid'])) {
 				return $this->Provider->reason = 'A tool consumer GUID must be included in the launch request.';
 			}
-			if (empty($this->Consumer->consumer_guid) or ($this->Consumer->consumer_guid != $data['tool_consumer_instance_guid'])) {
+			if (empty($data['tool_consumer_instance_guid'])) {
 				return $this->Provider->reason = 'Request is from an invalid tool consumer: ' . $this->Consumer->consumer_guid;
+			}
+			if (empty($this->Consumer->consumer_guid) or ($this->Consumer->consumer_guid != $data['tool_consumer_instance_guid'])) {
+				// update the tool consumer GUID
+				$this->Consumer->consumer_guid = $data['tool_consumer_instance_guid'];
+				$this->Consumer->saveField('consumer_guid', $data['tool_consumer_instance_guid']);
 			}
 		}
 
@@ -334,7 +339,7 @@ class LtiRequestComponent extends Component {
 	
 		$this->LtiUser = ClassRegistry::init('Lti.LtiUser');
 		$result = $this->LtiUser->find('first', ['contain' => [], 'conditions' => $conditions]);
-
+		
 		#
 		### Set the user instance
 		#

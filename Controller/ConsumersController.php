@@ -246,7 +246,8 @@ class ConsumersController extends LtiAppController {
 			$params['oauth_callback'] = 'about:blank';
 // Add OAuth signature
 			$hmac_method = new OAuthSignatureMethod_HMAC_SHA1();
-			$consumer = new OAuthConsumer($this->getKey(), $this->secret, NULL);
+			// note key and secret are undefined ... not sure how this function is meant to work
+			$consumer = new OAuthConsumer($this->key, $this->secret, NULL);
 			$req = OAuthRequest::from_consumer_and_token($consumer, NULL, 'POST', $url, $params);
 			$req->sign_request($hmac_method, $consumer, NULL);
 			$params = $req->get_parameters();
@@ -331,7 +332,7 @@ class ConsumersController extends LtiAppController {
 			'secret' => $secret,
 			'lti_version' => 'LTI-1p0',
 			'consumer_name' => $name . " LMS",
-			'consumer_guid' => strtr(strtolower(ClassRegistry::init('Inflector')->slug($name)), '_','-'),
+			'consumer_guid' => null,
 			'consumer_version' => 1,
 			'protect' => true,
 			'enabled' => true,

@@ -211,6 +211,7 @@ class LtiRequestComponent extends Component {
 	// This function creates a ResourceLink entry which connects a resource_link_id with a consumer_key
 	// If an entry exists, it uses that one
 	public function setResourceLink() {
+		$this->ResourceLink = ClassRegistry::init('Lti.ResourceLink');
 		$data = $this->controller->request->data;
 		if (empty($data['resource_link_id'])) {
 			return;
@@ -230,7 +231,6 @@ class LtiRequestComponent extends Component {
 		}
 
 		// first try loading the resource link for the specific context_id item
-		$this->ResourceLink = ClassRegistry::init('Lti.ResourceLink');
 		$this->ResourceLink->lti_resource_id = trim($data['resource_link_id']);
 		$conditions =  [
 				'consumer_key' => $this->Consumer->consumer_key,
@@ -317,20 +317,25 @@ class LtiRequestComponent extends Component {
 	}
 
 	public function setUser() {
+		$this->LtiUser = ClassRegistry::init('Lti.LtiUser');
+		$this->LtiUser->contain();
 		if (empty($this->ResourceLink)) {
 			return;
 		}
 		$data = $this->controller->request->data;
 		$email = (isset($data['lis_person_contact_email_primary'])) ? $data['lis_person_contact_email_primary'] : '';
-
+		$user_id =  (isset($data['user_id'])) ? $data['user_id'] : '';
 		// cannot match a user without the lis_person_sourcedid or email
-		if (empty($data['lis_person_sourcedid']) && empty($email)) {
+		if (empty($data['lis_person_sourcedid']) && empty($user_id) && empty($email)) {
 			return;
 		}
 		
 		// if there is no lis_person_sourcedid but an email we will use that
 		if (empty($data['lis_person_sourcedid'])) {
 			$data['lis_person_sourcedid'] = $email;
+			if (!empty($user_id)) {
+				$data['lis_person_sourcedid'] = $user_id;
+			}
 		}
 
 		$conditions = [
@@ -339,7 +344,6 @@ class LtiRequestComponent extends Component {
 			'lis_person_sourcedid' => [ trim($data['lis_person_sourcedid']), trim($email) ]
 		];
 	
-		$this->LtiUser = ClassRegistry::init('Lti.LtiUser');
 		$result = $this->LtiUser->find('first', ['contain' => [], 'conditions' => $conditions]);
 		
 		#
@@ -392,7 +396,7 @@ class LtiRequestComponent extends Component {
 			$this->LtiUser->data['LtiUser']['lis_person_sourcedid'] = $data['lis_person_sourcedid'];
 		}
 
-		$this->LtiUser->save($this->LtiUser->data);
+		$this->LtiUser->save($this->LtiUser->data['LtiUser']);
 		$this->LtiUser->data = $this->LtiUser->find('first', ['conditions' => $conditions]);
 
 
@@ -475,7 +479,7 @@ class LtiRequestComponent extends Component {
 		### Persist changes to consumer
 		#
 		if ($doSaveConsumer) {
-			$this->Consumer->save($this->Consumer->data);
+			$this->Consumer->save($this->Consumer->data['Consumer']);
 		}
 	}
 

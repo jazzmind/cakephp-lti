@@ -395,7 +395,8 @@ class LtiRequestComponent extends Component {
 		if (empty($this->LtiUser->data['LtiUser']['lis_person_sourcedid'])) {
 			$this->LtiUser->data['LtiUser']['lis_person_sourcedid'] = $data['lis_person_sourcedid'];
 		}
-
+		
+		$this->LtiUser->id = $this->LtiUser->data['LtiUser']['id'];
 		$this->LtiUser->save($this->LtiUser->data['LtiUser']);
 		$this->LtiUser->data = $this->LtiUser->find('first', ['conditions' => $conditions]);
 
@@ -479,7 +480,8 @@ class LtiRequestComponent extends Component {
 		### Persist changes to consumer
 		#
 		if ($doSaveConsumer) {
-			$this->Consumer->save($this->Consumer->data['Consumer']);
+			$this->Consumer->id = $this->Consumer->data['id'];
+			$this->Consumer->save($this->Consumer->data);
 		}
 	}
 

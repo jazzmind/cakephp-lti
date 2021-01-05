@@ -325,16 +325,16 @@ class ConsumersController extends LtiAppController {
 
 	public function admin_add() {
 		$user = $this->Auth->user();
-		$name = $user['Institution']['name'];
+		$name = $user['Experience']['name'];
 		$secret = strtoupper(substr(sha1(strtotime("now") . uniqid()), 1, 4) . '-' . substr(sha1(strtotime("now") . uniqid()), 1, 4). '-' . substr(sha1(strtotime("now") . uniqid()), 1, 4));   
 		$data = [
-			'name' => $name,
+			'name' => substr($name, 0, 44),
 			'secret' => $secret,
 			'lti_version' => 'LTI-1p0',
 			'consumer_name' => $name . " LMS",
 			'consumer_guid' => null,
 			'consumer_version' => 1,
-			'protect' => true,
+			'protect' => false,
 			'enabled' => true,
 			'institution_id' => $user['institution_id']
 		];

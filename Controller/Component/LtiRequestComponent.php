@@ -109,7 +109,7 @@ class LtiRequestComponent extends Component {
 			$this->Consumer->$k = $v;
 		}
 
-		if ($this->Consumer->protect) {
+		if ($this->Consumer->protect === true) {
 			if (empty($data['tool_consumer_instance_guid'])) {
 				return $this->Provider->reason = 'A tool consumer GUID must be included in the launch request.';
 			}
@@ -117,10 +117,7 @@ class LtiRequestComponent extends Component {
 				return $this->Provider->reason = 'Request is from an invalid tool consumer: ' . $this->Consumer->consumer_guid;
 			}
 			if (empty($this->Consumer->consumer_guid) or ($this->Consumer->consumer_guid != $data['tool_consumer_instance_guid'])) {
-				// update the tool consumer GUID
-				$this->Consumer->consumer_guid = $result['Consumer']['consumer_guid'] = $data['tool_consumer_instance_guid'];
-				$this->Consumer->id = $result['Consumer']['id'];
-				$this->Consumer->save($result['Consumer']);
+				return $this->Provider->reason = 'Tool consumer ID in request is different from what is in Practera and protect mode is on, preventing us from updating the value automatically: ' . $this->Consumer->consumer_guid;
 			}
 		}
 
@@ -395,8 +392,9 @@ class LtiRequestComponent extends Component {
 		if (empty($this->LtiUser->data['LtiUser']['lis_person_sourcedid'])) {
 			$this->LtiUser->data['LtiUser']['lis_person_sourcedid'] = $data['lis_person_sourcedid'];
 		}
-		
-		$this->LtiUser->id = $this->LtiUser->data['LtiUser']['id'];
+		if (!empty($this->LtiUser->data['LtiUser']['id'])) {
+			$this->LtiUser->id = $this->LtiUser->data['LtiUser']['id'];
+		}
 		$this->LtiUser->save($this->LtiUser->data['LtiUser']);
 		$this->LtiUser->data = $this->LtiUser->find('first', ['conditions' => $conditions]);
 
@@ -414,6 +412,7 @@ class LtiRequestComponent extends Component {
 		#
 		$doSaveConsumer = FALSE;
 		$data = $this->controller->request->data;
+
 		$now = time();
 		$today = date('Y-m-d', $now);
 		if (empty($this->Consumer->data['last_access'])) {
@@ -451,7 +450,7 @@ class LtiRequestComponent extends Component {
 		}
 
 		if (isset($data['tool_consumer_instance_guid'])) {
-			if (is_null($this->Consumer->data['consumer_guid'])) {
+			if (empty($this->Consumer->data['consumer_guid'])) {
 				$this->Consumer->data['consumer_guid'] = $data['tool_consumer_instance_guid'];
 				$doSaveConsumer = TRUE;
 			} else if (!$this->Consumer->data['protect']) {
@@ -479,10 +478,10 @@ class LtiRequestComponent extends Component {
 		#
 		### Persist changes to consumer
 		#
-		if ($doSaveConsumer) {
-			$this->Consumer->id = $this->Consumer->data['id'];
+		if ($doSaveConsumer && $this->Consumer->id) {
 			$this->Consumer->save($this->Consumer->data);
 		}
+		$this->Consumer->read();
 	}
 
 /**

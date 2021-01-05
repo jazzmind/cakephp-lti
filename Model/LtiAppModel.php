@@ -23,16 +23,12 @@ class LtiAppModel extends AppModel
 		}
 
 		foreach ($set as $key => $value) {
-			// if there's an empty value, set the default value listed in the schema
-			// this is bad? it means the value in the DB and the value returned might not be the same
-			if (empty($value) and isset($this->_schema[$key]['default'])) {
-				$set[$key] = $value = $this->_schema[$key]['default'];
-			}
 			// set each result key as an object variable
 			$this->{$key} = $value;
 		}
 		return $results;
 	}
+
 
 	// public function beforeSave($options = []) {
 

@@ -353,6 +353,7 @@ class ConsumersController extends LtiAppController {
 		if ($this->request->is('post') || $this->request->is('put')) {
 			// cannot change this
 			$this->request->data['Consumer']['consumer_key'] = $consumer['Consumer']['consumer_key'];
+			$this->request->data['Consumer']['protected'] = false;
 
 			// $consumerName = $this->request->data['Consumer']['consumer_name'];
 			// $this->request->data['Consumer']['consumer_name'] = $this->request->data['Consumer']['consumer_name'];
@@ -374,7 +375,7 @@ class ConsumersController extends LtiAppController {
 				$this->request->data['Consumer']['enable_until'] = null;
 			}
 
-			if ($this->Consumer->save($this->request->data, true, ['enabled', 'name', 'consumer_name', 'secret', 'consumer_guid', 'css_path', 'enable_from', 'enable_until'])) {
+			if ($this->Consumer->save($this->request->data, true, ['enabled', 'protected', 'name', 'consumer_name', 'secret', 'consumer_guid', 'css_path', 'enable_from', 'enable_until'])) {
 				$this->redirect(['action' => 'index']);
 			}
 		} else {

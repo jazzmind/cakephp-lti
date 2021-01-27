@@ -11,7 +11,7 @@ class ProvidersController extends LtiAppController {
  */
  	public $actions = [
  		'all' => [
- 			'request'
+ 			'request', 'salesforce'
   		],
  		'admin' => [
  			'admin_index', 'admin_add', 'admin_edit', 'admin_delete',
@@ -21,8 +21,8 @@ class ProvidersController extends LtiAppController {
 	];
 
 	public function beforeFilter() {
-		$this->Security->unlockedActions = ['admin_index', 'admin_add', 'admin_edit', 'admin_delete', 'request'];
-		$this->Auth->allow('request');
+		$this->Security->unlockedActions = ['admin_index', 'admin_add', 'admin_edit', 'admin_delete', 'request', 'salesforce'];
+		$this->Auth->allow('request', 'salesforce');
 
 		parent::beforeFilter();
 	}
@@ -30,6 +30,35 @@ class ProvidersController extends LtiAppController {
 
 	public function isAuthorized($user) {
 		return parent::isAuthorized($user);
+	}
+
+	public function salesforce($consumerKey) {
+		$this->layout = 'basic';
+		$this->request->data['oauth_consumer_key'] = $consumerKey;
+
+		#
+		### Perform action
+		#
+
+		$this->response->header('X-Frame-Options', '');
+		$this->_init();
+		$this->LtiRequest->initSalesforce($consumerKey);
+
+		if ($this->LtiRequest->validate()) {
+			
+			$this->LtiRequest->setResourceLink();
+
+			$this->LtiRequest->setUser();
+
+			$this->LtiRequest->setConsumer();
+
+			$this->LtiRequest->doCallbackMethod();
+
+		} else {
+			echo "here";exit;
+		}
+		$this->_result();
+
 	}
 
 	public function request($cohort=null) {

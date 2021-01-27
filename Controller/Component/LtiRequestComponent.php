@@ -93,7 +93,6 @@ class LtiRequestComponent extends Component {
 				}
 				break;
 		}
-
 		#
 		### Get the consumer
 		#
@@ -161,6 +160,7 @@ class LtiRequestComponent extends Component {
 		}
 
 		$this->Provider->isOK = true;
+		return true;
 	}
 /**
  * Check the authenticity of the LTI launch request.
@@ -203,6 +203,67 @@ class LtiRequestComponent extends Component {
 
 		return true;
 
+	}
+
+
+	public function initSalesforce($consumerKey) {
+		if (!$this->Provider->isOK) {
+			return false;
+		}
+		$this->OAuthStore = ClassRegistry::init('Lti.OAuthStore');
+		list($sig, $base) = explode('.', $this->controller->request->data['signed_request']);
+		$data = json_decode(base64_decode($base),true);	
+
+		$this->controller->request->data["tool_consumer_instance_guid"] = $data['context']['application']['applicationId'];		
+		$this->controller->request->data["tool_consumer_instance_description"] = $data['context']['application']['name'];		
+		$this->controller->request->data["context_id"] = substr($data['context']['environment']['locationUrl'], 0, 254);		
+		$this->controller->request->data["context_title"] = substr($data['context']['environment']['locationUrl'], 0, 254);
+		$this->controller->request->data["lis_person_sourcedid"] = $data['context']['user']['userId'];
+		$this->controller->request->data["lis_person_name_full"] = $data['context']['user']['fullName'];
+		$this->controller->request->data["lis_person_name_family"] = $data['context']['user']['lastName'];
+		$this->controller->request->data["lis_person_name_given"] = $data['context']['user']['firstName'];
+		$this->controller->request->data["lis_person_contact_email_primary"] = $data['context']['user']['email'];
+		$this->controller->request->data["resource_link_id"] = $consumerKey;
+		$this->controller->request->data["lti_message_type"] = "basic-lti-launch-request";
+		$this->controller->request->data["roles"] = 'Learner';
+		$this->controller->request->data["lti_version"] = 'LTI-1p0';
+		$this->controller->request->data["oauth_signature_method"] = 'HMAC-SHA256';
+		$this->controller->request->data["oauth_version"] = '1.0';		
+		$this->controller->request->data["oauth_timestamp"] = $data['issuedAt'];		
+
+	}
+
+	public function authenticateSalesforce() {
+		if (!$this->Provider->isOK) {
+			return false;
+		}
+
+		try {
+			$this->OAuthStore = ClassRegistry::init('Lti.OAuthStore');
+			list($sig, $base) = explode('.', $this->controller->request->data['signed_request']);
+			$secret = $this->Consumer->secret;
+			$built = base64_encode(hash_hmac('sha256', $base, $secret, true));
+			if ($built !== $sig) {
+				throw new Exception("invalid signature $sig");
+			}
+		} catch (Exception $e) {
+			$this->Provider->isOK = FALSE;
+			if (empty($this->Provider->reason)) {
+				if ($this->Provider->debugMode) {
+					$this->Provider->reason = $e->getMessage();
+					if (empty($this->Provider->reason)) {
+						$this->Provider->reason = 'Could not verify signature';
+					}
+					$this->Provider->details[] = 'Timestamp: ' . time();
+					$this->Provider->details[] = "Signature: {$sig}";
+					$this->Provider->details[] = "Payload: {$base}]";
+				} else {
+					$this->Provider->reason = 'OAuth signature check failed - perhaps an incorrect secret or timestamp.';
+				}
+			}
+			return false;
+		}
+		return true;		
 	}
 
 	// This function creates a ResourceLink entry which connects a resource_link_id with a consumer_key

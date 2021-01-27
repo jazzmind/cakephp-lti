@@ -32,7 +32,7 @@ class ProvidersController extends LtiAppController {
 		return parent::isAuthorized($user);
 	}
 
-	public function salesforce($consumerKey) {
+	public function salesforce($consumerKey, $cohort=null) {
 		$this->layout = 'basic';
 		$this->request->data['oauth_consumer_key'] = $consumerKey;
 
@@ -42,10 +42,12 @@ class ProvidersController extends LtiAppController {
 
 		$this->response->header('X-Frame-Options', '');
 		$this->_init();
+		
 		$this->LtiRequest->initSalesforce($consumerKey);
+		$this->LtiRequest->validate($cohort);
 
-		if ($this->LtiRequest->validate()) {
-			
+		if ($this->LtiRequest->authenticateSalesforce()) {
+
 			$this->LtiRequest->setResourceLink();
 
 			$this->LtiRequest->setUser();
@@ -54,9 +56,7 @@ class ProvidersController extends LtiAppController {
 
 			$this->LtiRequest->doCallbackMethod();
 
-		} else {
-			echo "here";exit;
-		}
+		} 
 		$this->_result();
 
 	}

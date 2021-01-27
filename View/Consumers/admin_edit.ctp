@@ -34,7 +34,7 @@
 					</label>
 				</div>
 			</div>
-			<div class='form-group'>
+			<!-- <div class='form-group'>
 				<label class='col-sm-2 control-label'>Protected</label>
 				<div class='col-xs-12 col-sm-5'>
 					<label>
@@ -42,9 +42,10 @@
 						<span class="lbl"></span>
 					</label>
 				</div>
-			</div>
+			</div> -->
 			<?= $this->Form->input('Consumer.name'); ?>
 			<?= $this->Form->input('Consumer.consumer_name'); ?>
+			<?= $this->Form->input('Consumer.secret'); ?>
 			<?= $this->Form->input('Consumer.css_path'); ?>
 			<?= $this->Form->input('Consumer.enable_from', [
 				'type' => 'text',

@@ -98,7 +98,7 @@ abstract class OAuthSignatureMethod {
     // Avoid a timing leak with a (hopefully) time insensitive compare
     $result = 0;
     for ($i = 0; $i < strlen($signature); $i++) {
-      $result |= ord($built{$i}) ^ ord($signature{$i});
+      $result |= ord($built[$i]) ^ ord($signature[$i]);
     }
 
     return $result == 0;
@@ -202,6 +202,7 @@ abstract class OAuthSignatureMethod_RSA_SHA1 extends OAuthSignatureMethod {
 
     // Pull the private key ID from the certificate
     $privatekeyid = openssl_get_privatekey($cert);
+    $signature = "";
 
     // Sign using the key
     $ok = openssl_sign($base_string, $signature, $privatekeyid);
@@ -773,6 +774,7 @@ class OAuthUtil {
   //                  see http://code.google.com/p/oauth/issues/detail?id=163
   public static function split_header($header, $only_allow_oauth_parameters = true) {
     $params = array();
+    $matches = [];
     if (preg_match_all('/('.($only_allow_oauth_parameters ? 'oauth_' : '').'[a-z_-]*)=(:?"([^"]*)"|([^,]*))/', $header, $matches)) {
       foreach ($matches[1] as $i => $h) {
         $params[$h] = OAuthUtil::urldecode_rfc3986(empty($matches[3][$i]) ? $matches[4][$i] : $matches[3][$i]);
@@ -893,5 +895,3 @@ class OAuthUtil {
     return implode('&', $pairs);
   }
 }
-
-?>
